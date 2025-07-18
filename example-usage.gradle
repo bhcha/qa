@@ -4,13 +4,13 @@
 dependencies {
     implementation files('qa/build/libs/qa-1.0.0.jar')
     // 또는 Maven Local에 설치한 경우
-    // implementation 'com.identitybridge:qa:1.0.0'
+    // implementation 'com.ldx:qa:1.0.0'
 }
 
 // 2. QA 분석 태스크 추가
 task qualityCheck(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
-    main = 'com.identitybridge.qa.QualityAnalyzer'
+    main = 'com.ldx.qa.QualityAnalyzer'
     args = [projectDir.absolutePath, "${buildDir}/reports/quality"]
 }
 
@@ -30,8 +30,8 @@ task runQualityAnalysis {
         def classLoader = new URLClassLoader(urls, this.class.classLoader)
         
         // QualityAnalyzer 클래스 로드 및 실행
-        def analyzerClass = classLoader.loadClass('com.identitybridge.qa.QualityAnalyzer')
-        def configClass = classLoader.loadClass('com.identitybridge.qa.config.QaConfiguration')
+        def analyzerClass = classLoader.loadClass('com.ldx.qa.QualityAnalyzer')
+        def configClass = classLoader.loadClass('com.ldx.qa.config.QaConfiguration')
         
         // 설정 생성
         def config = configClass.getMethod('defaultConfig').invoke(null)

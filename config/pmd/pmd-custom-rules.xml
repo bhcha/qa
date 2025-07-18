@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
-<ruleset name="IdentityBridge PMD Rules"
+<ruleset name="ldx PMD Rules"
          xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
 
     <description>
-        Custom PMD rules for IdentityBridge project
+        Custom PMD rules for ldx project
         헥사고날 아키텍처와 도메인 주도 설계를 고려한 규칙들
     </description>
 
@@ -122,7 +122,7 @@
         <properties>
             <property name="xpath">
                 <value>
-                    //ImportDeclaration[@ImportedName[starts-with(@Image, 'com.dx.identitybridge.domain')]]
+                    //ImportDeclaration[@ImportedName[starts-with(@Image, 'com.ldx.qa.domain')]]
                     [ancestor::CompilationUnit//ClassOrInterfaceDeclaration[contains(@SimpleName, 'Adapter')]]
                     [not(contains(@ImportedName, '.port.'))]
                 </value>

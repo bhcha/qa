@@ -80,7 +80,7 @@
     
     <!-- Exclude EI_EXPOSE_REP2 for Spring Web Configuration -->
     <Match>
-        <Class name="com.dx.identitybridge.config.WebConfig"/>
+        <Class name="com.ldx.qa.config.WebConfig"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
 </FindBugsFilter>

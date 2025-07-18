@@ -4,7 +4,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
-group = 'com.identitybridge'
+group = 'com.ldx'
 version = '1.0.0'
 sourceCompatibility = '17'
 
@@ -54,8 +54,8 @@ jar {
     }
     manifest {
         attributes(
-            'Main-Class': 'com.identitybridge.qa.QualityAnalyzer',
-            'Implementation-Title': 'IdentityBridge QA Module',
+            'Main-Class': 'com.ldx.qa.QualityAnalyzer',
+            'Implementation-Title': 'ldx QA Module',
             'Implementation-Version': version
         )
     }
@@ -68,8 +68,8 @@ shadowJar {
     
     manifest {
         attributes(
-            'Main-Class': 'com.identitybridge.qa.QualityAnalyzer',
-            'Implementation-Title': 'IdentityBridge QA Module',
+            'Main-Class': 'com.ldx.qa.QualityAnalyzer',
+            'Implementation-Title': 'ldx QA Module',
             'Implementation-Version': version
         )
     }
@@ -97,8 +97,8 @@ task fatJar(type: Jar) {
     
     manifest {
         attributes(
-            'Main-Class': 'com.identitybridge.qa.QualityAnalyzer',
-            'Implementation-Title': 'IdentityBridge QA Module',
+            'Main-Class': 'com.ldx.qa.QualityAnalyzer',
+            'Implementation-Title': 'ldx QA Module',
             'Implementation-Version': version
         )
     }
@@ -111,9 +111,9 @@ publishing {
             from components.java
             
             pom {
-                name = 'IdentityBridge QA Module'
-                description = 'Quality Analysis Library for IdentityBridge projects'
-                url = 'https://github.com/identitybridge/qa-module'
+                name = 'ldx QA Module'
+                description = 'Quality Analysis Library for ldx projects'
+                url = 'https://github.com/ldx/qa-module'
                 
                 licenses {
                     license {

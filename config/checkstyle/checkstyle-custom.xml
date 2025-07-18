@@ -4,7 +4,7 @@
           "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <!--
-    IdentityBridge Checkstyle Configuration
+    ldx Checkstyle Configuration
     헥사고날 아키텍처와 도메인 주도 설계를 고려한 코딩 표준
 -->
 

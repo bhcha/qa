@@ -1,4 +1,4 @@
-# IdentityBridge QA Module
+# ldx QA Module
 
 품질 분석을 위한 Java 라이브러리 모듈입니다. 정적 분석 도구들과 ArchUnit 아키텍처 검증을 통합하여 종합적인 코드 품질 리포트를 제공합니다.
 
@@ -32,7 +32,7 @@ task qaInit(type: JavaExec) {
     description = 'Initialize QA configuration files in project root'
     group = 'setup'
     
-    mainClass = 'com.identitybridge.qa.QaInitializer'
+    mainClass = 'com.ldx.qa.QaInitializer'
     classpath = project(':qa').sourceSets.main.runtimeClasspath
     
     doFirst {
@@ -50,7 +50,7 @@ task qualityCheck(type: JavaExec) {
     description = 'Runs quality analysis using QA Module'
     group = 'verification'
     
-    mainClass = 'com.identitybridge.qa.QualityAnalyzer'
+    mainClass = 'com.ldx.qa.QualityAnalyzer'
     classpath = project(':qa').sourceSets.main.runtimeClasspath
     args = [projectDir.toString(), "${buildDir}/reports/quality".toString()]
     
@@ -189,7 +189,7 @@ qa.reports.json.enabled=true
 ### ArchUnit 설정 (`config/archunit/archunit.properties`)
 ```properties
 # 패키지 구조 정의
-package.base=com.dx.identitybridge
+package.base=com.ldx.qa
 package.domain=..domain..
 package.application=..application..
 package.adapter=..adapter..
@@ -218,7 +218,7 @@ tolerance.domain.dependencies=0
 ```gradle
 task qualityCheckCustom(type: JavaExec) {
     dependsOn compileJava, ':qa:jar'
-    mainClass = 'com.identitybridge.qa.QualityAnalyzer'
+    mainClass = 'com.ldx.qa.QualityAnalyzer'
     classpath = project(':qa').sourceSets.main.runtimeClasspath
     
     // 커스텀 설정 파일 지정
@@ -232,8 +232,8 @@ task qualityCheckCustom(type: JavaExec) {
 
 ### 프로그래밍 방식 사용
 ```java
-import com.identitybridge.qa.QualityAnalyzer;
-import com.identitybridge.qa.config.QaConfiguration;
+import com.ldx.qa.QualityAnalyzer;
+import com.ldx.qa.config.QaConfiguration;
 
 // 기본 설정으로 실행
 QaConfiguration config = QaConfiguration.defaultConfig();
@@ -416,4 +416,4 @@ Apache License 2.0
 
 - **이슈**: GitHub Issues
 - **문서**: [프로젝트 위키](link-to-wiki)
-- **이메일**: support@identitybridge.com
+- **이메일**: support@ldx.com

@@ -1,0 +1,32 @@
+# Build artifacts
+build/
+.gradle/
+*.jar
+*.class
+
+# IDE files
+.idea/
+.DS_Store
+*.iml
+*.ipr
+*.iws
+
+# Gradle wrapper
+gradle/
+gradlew
+gradlew.bat
+
+# Reports and logs
+reports/
+*.log
+
+# Private files
+claude.md
+guide/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test reports
+TEST-*.xml
