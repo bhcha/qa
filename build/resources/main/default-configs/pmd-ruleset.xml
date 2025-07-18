@@ -5,7 +5,7 @@
          xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
 
     <description>
-        Default PMD rules for IdentityBridge QA Module
+        Default PMD rules for ldx QA Module
         이 파일은 QA 모듈의 기본 PMD 규칙을 정의합니다.
     </description>
 

@@ -6,7 +6,7 @@
 - 오직 현재 디렉토리 내부의 파일만 작업 대상입니다
 - 상위 프로젝트의 지침들을 확인 할 필요 없음(CLAUDE.md 등)
 
-# IdentityBridge QA Module
+# ldx QA Module
 
 품질 분석을 위한 Java 라이브러리 모듈입니다. 정적 분석 도구들과 AI 기반 분석을 통합하여 종합적인 코드 품질 리포트를 제공합니다.
 
@@ -25,14 +25,14 @@
 #### Gradle
 ```gradle
 dependencies {
-    implementation 'com.identitybridge:qa-module:1.0.0'
+    implementation 'com.ldx:qa-module:1.0.0'
 }
 ```
 
 #### Maven
 ```xml
 <dependency>
-    <groupId>com.identitybridge</groupId>
+    <groupId>com.ldx</groupId>
     <artifactId>qa-module</artifactId>
     <version>1.0.0</version>
 </dependency>
@@ -42,8 +42,8 @@ dependencies {
 
 ```gradle
 // build.gradle
-import com.identitybridge.qa.QualityAnalyzer
-import com.identitybridge.qa.config.QaConfiguration
+import com.ldx.qa.QualityAnalyzer
+import com.ldx.qa.config.QaConfiguration
 
 task qualityCheck {
     doLast {

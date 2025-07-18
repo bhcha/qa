@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Main-Class: com.identitybridge.qa.QualityAnalyzer
-Implementation-Title: IdentityBridge QA Module
+Main-Class: com.ldx.qa.QualityAnalyzer
+Implementation-Title: ldx QA Module
 Implementation-Version: 1.0.0
 
