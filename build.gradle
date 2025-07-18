@@ -1,0 +1,127 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+group = 'com.identitybridge'
+version = '1.0.0'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // 정적 분석 도구
+    implementation 'com.puppycrawl.tools:checkstyle:10.12.0'
+    implementation 'net.sourceforge.pmd:pmd-java:6.55.0'
+    implementation 'com.github.spotbugs:spotbugs:4.7.3'
+    implementation 'com.tngtech.archunit:archunit:1.2.1'
+    
+    // XML 파싱
+    implementation 'org.dom4j:dom4j:2.1.4'
+    
+    // JSON 처리
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
+    
+    // HTML 리포트 생성
+    implementation 'org.freemarker:freemarker:2.3.32'
+    
+    // 로깅
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+    implementation 'ch.qos.logback:logback-classic:1.4.11'
+    
+    // 유틸리티
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'commons-io:commons-io:2.11.0'
+    
+    // 테스트
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
+    testImplementation 'org.mockito:mockito-core:5.3.1'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// JAR에 리소스 포함
+jar {
+    from('src/main/resources') {
+        include '**/*'
+        into 'resources'
+    }
+    manifest {
+        attributes(
+            'Main-Class': 'com.identitybridge.qa.QualityAnalyzer',
+            'Implementation-Title': 'IdentityBridge QA Module',
+            'Implementation-Version': version
+        )
+    }
+}
+
+// Shadow JAR 설정 (모든 의존성 포함 - 올바른 방식)
+shadowJar {
+    archiveClassifier = 'all'
+    mergeServiceFiles()
+    
+    manifest {
+        attributes(
+            'Main-Class': 'com.identitybridge.qa.QualityAnalyzer',
+            'Implementation-Title': 'IdentityBridge QA Module',
+            'Implementation-Version': version
+        )
+    }
+}
+
+// 기존 fatJar 태스크는 유지 (호환성을 위해)
+task fatJar(type: Jar) {
+    dependsOn shadowJar
+    archiveClassifier = 'all-legacy'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    // 1. 먼저 메인 소스 추가
+    from sourceSets.main.output
+    
+    // 2. 그다음 의존성 추가
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    // 3. 리소스 포함
+    from('src/main/resources') {
+        include '**/*'
+        into 'resources'
+    }
+    
+    manifest {
+        attributes(
+            'Main-Class': 'com.identitybridge.qa.QualityAnalyzer',
+            'Implementation-Title': 'IdentityBridge QA Module',
+            'Implementation-Version': version
+        )
+    }
+}
+
+// Maven 배포 설정
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            
+            pom {
+                name = 'IdentityBridge QA Module'
+                description = 'Quality Analysis Library for IdentityBridge projects'
+                url = 'https://github.com/identitybridge/qa-module'
+                
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,21 @@
+{
+  "status": "fail",
+  "timestamp": "2025-07-16T18:07:22",
+  "type": "cqrs",
+  "target": "entire codebase",
+  "summary": "CQRS architecture violations detected",
+  "violations": [{"severity": "error", "file": "cqrs architecture tests", "line": 0, "message": "", "suggestion": "Review CQRS patterns"}],
+  "metrics": {
+    "score": 0,
+    "rules_checked": 2,
+    "violations_found": 1
+  },
+  "recommendations": [
+    {"priority": "high", "action": "Fix CQRS dependency violations", "rationale": "Maintains clear command/query separation"}
+  ],
+  "next_steps": [
+    "Check build/reports/tests/archunitTest/index.html for details",
+    "Review CQRS patterns in your codebase",
+    "Fix violations before proceeding"
+  ]
+}

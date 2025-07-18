@@ -1,0 +1,12 @@
+{
+  "status": "fail",
+  "timestamp": "2025-07-17T23:25:42",
+  "type": "jacoco",
+  "target": "entire codebase",
+  "summary": "JaCoCo test coverage analysis completed",
+  "violations": [],
+  "metrics": {
+    "instruction_coverage": 2,
+    "recommended_minimum": 80
+  }
+}

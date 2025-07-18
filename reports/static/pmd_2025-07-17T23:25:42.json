@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "timestamp": "2025-07-17T23:25:42",
+  "type": "pmd",
+  "target": "src/main/java",
+  "summary": "PMD code quality analysis completed",
+  "violations": [],
+  "metrics": {
+    "files_analyzed":       77,
+    "violations_found": 0
+  }
+}

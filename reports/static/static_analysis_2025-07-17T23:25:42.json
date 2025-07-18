@@ -1,0 +1,22 @@
+{
+  "status": "pass",
+  "timestamp": "2025-07-17T23:25:42",
+  "type": "static-analysis",
+  "target": "entire codebase",
+  "summary": "Static analysis completed using 6 tools",
+  "tools_executed": ["checkstyle","spotbugs","pmd","jacoco","sonarqube","archunit"],
+  "total_violations": 0,
+  "individual_reports": {
+    "checkstyle": "qa/reports/static/checkstyle_2025-07-17T23:25:42.json",
+    "spotbugs": "qa/reports/static/spotbugs_2025-07-17T23:25:42.json",
+    "pmd": "qa/reports/static/pmd_2025-07-17T23:25:42.json",
+    "jacoco": "qa/reports/static/jacoco_2025-07-17T23:25:42.json",
+    "sonarqube": "qa/reports/static/sonarqube_2025-07-17T23:25:42.json",
+    "archunit": "qa/reports/static/archunit_2025-07-17T23:25:42.json"
+  },
+  "recommendations": [
+    "Review individual tool reports for specific issues",
+    "Address high-priority violations first",
+    "Set up quality gates in CI/CD pipeline"
+  ]
+}

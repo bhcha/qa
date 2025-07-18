@@ -1,0 +1,12 @@
+{
+  "status": "fail",
+  "timestamp": "2025-07-17T23:25:42",
+  "type": "archunit",
+  "target": "entire codebase",
+  "summary": "ArchUnit architecture compliance analysis completed",
+  "violations": [],
+  "metrics": {
+    "rules_checked": 12,
+    "violations_found": 1
+  }
+}

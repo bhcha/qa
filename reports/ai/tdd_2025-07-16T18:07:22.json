@@ -1,0 +1,17 @@
+{
+  "status": "pass",
+  "timestamp": "2025-07-16T18:07:22",
+  "type": "tdd",
+  "target": "src/main/java",
+  "summary": "TDD methodology analysis completed",
+  "violations": [],
+  "metrics": {
+    "test_files":       66,
+    "main_files":       77,
+    "tdd_score": 75,
+    "methodology_based": true
+  },
+  "analysis": "",
+  "recommendations": [],
+  "note": "For test coverage metrics, use 'coverage' type analysis separately"
+}

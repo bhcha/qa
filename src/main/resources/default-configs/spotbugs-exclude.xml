@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <description>
+        Default SpotBugs exclude rules for IdentityBridge QA Module
+        이 파일은 QA 모듈의 기본 SpotBugs 제외 규칙을 정의합니다.
+    </description>
+    
+    <!-- 생성된 클래스 제외 -->
+    <Match>
+        <Class name="~.*\..*Application"/>
+        <Bug pattern="DM_EXIT"/>
+    </Match>
+    
+    <!-- 테스트 클래스 제외 -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="URF_UNREAD_FIELD"/>
+    </Match>
+    
+    <!-- 설정 클래스 제외 -->
+    <Match>
+        <Class name="~.*Config.*"/>
+        <Bug pattern="UWF_UNWRITTEN_FIELD"/>
+    </Match>
+    
+    <!-- DTO 클래스 제외 -->
+    <Match>
+        <Class name="~.*\.(dto|model)\..*"/>
+        <Bug pattern="SE_NO_SERIALVERSIONID"/>
+    </Match>
+    
+    <!-- Spring Boot 자동 설정 제외 -->
+    <Match>
+        <Package name="~.*\.config\..*"/>
+        <Bug pattern="UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD"/>
+    </Match>
+    
+    <!-- EI_EXPOSE_REP 경고 제외 -->
+    <Match>
+        <Package name="~.*\.config\..*"/>
+        <Method name="~get.*"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    
+    <!-- 의존성 주입 패턴 제외 -->
+    <Match>
+        <Class name="~.*"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <!-- Setter 메서드 제외 -->
+    <Match>
+        <Class name="~.*"/>
+        <Method name="~set.*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <!-- 예외 클래스 제외 -->
+    <Match>
+        <Class name="~.*Exception\..*"/>
+        <Bug pattern=".*"/>
+    </Match>
+    
+</FindBugsFilter>

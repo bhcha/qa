@@ -1,0 +1,35 @@
+// 메인 프로젝트의 build.gradle에 추가
+
+// 기존 셸 스크립트를 활용하는 방법
+task qualityCheck(type: Exec) {
+    workingDir projectDir
+    commandLine 'bash', 'qa/scripts/gemini-check.sh', 'quality', '--output', 'json'
+    
+    doLast {
+        println "Quality check completed. See reports in qa/reports/"
+    }
+}
+
+task checkArchitecture(type: Exec) {
+    workingDir projectDir
+    commandLine 'bash', 'qa/scripts/gemini-check.sh', 'architecture', '--output', 'json'
+}
+
+task checkSecurity(type: Exec) {
+    workingDir projectDir  
+    commandLine 'bash', 'qa/scripts/gemini-check.sh', 'security', '--output', 'json'
+}
+
+task checkTdd(type: Exec) {
+    workingDir projectDir
+    commandLine 'bash', 'qa/scripts/gemini-check.sh', 'tdd', '--output', 'json'
+}
+
+// 모든 검사를 한번에 실행
+task runAllQualityChecks {
+    dependsOn qualityCheck, checkArchitecture, checkSecurity, checkTdd
+    
+    doLast {
+        println "All quality checks completed!"
+    }
+}

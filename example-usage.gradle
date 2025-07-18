@@ -1,0 +1,54 @@
+// 메인 프로젝트의 build.gradle에 추가할 내용
+
+// 1. QA 모듈을 로컬 의존성으로 추가 (먼저 qa 모듈을 빌드해야 함)
+dependencies {
+    implementation files('qa/build/libs/qa-1.0.0.jar')
+    // 또는 Maven Local에 설치한 경우
+    // implementation 'com.identitybridge:qa:1.0.0'
+}
+
+// 2. QA 분석 태스크 추가
+task qualityCheck(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.identitybridge.qa.QualityAnalyzer'
+    args = [projectDir.absolutePath, "${buildDir}/reports/quality"]
+}
+
+// 3. 또는 더 간단한 방법 - Gradle 태스크 내에서 직접 호출
+task runQualityAnalysis {
+    dependsOn classes, testClasses
+    
+    doLast {
+        // QA jar 파일을 클래스패스에 추가
+        def qaJar = file('qa/build/libs/qa-1.0.0.jar')
+        if (!qaJar.exists()) {
+            throw new GradleException("QA module not built. Run './gradlew :qa:build' first")
+        }
+        
+        // URLClassLoader를 사용하여 동적으로 로드
+        def urls = [qaJar.toURI().toURL()] as URL[]
+        def classLoader = new URLClassLoader(urls, this.class.classLoader)
+        
+        // QualityAnalyzer 클래스 로드 및 실행
+        def analyzerClass = classLoader.loadClass('com.identitybridge.qa.QualityAnalyzer')
+        def configClass = classLoader.loadClass('com.identitybridge.qa.config.QaConfiguration')
+        
+        // 설정 생성
+        def config = configClass.getMethod('defaultConfig').invoke(null)
+        
+        // 분석 실행
+        def report = analyzerClass.getMethod('analyze', File.class, File.class, configClass)
+            .invoke(null, projectDir, file("${buildDir}/reports/quality"), config)
+        
+        // 결과 확인
+        def status = report.getClass().getMethod('getOverallStatus').invoke(report)
+        if (status == "fail") {
+            throw new GradleException("Quality check failed!")
+        }
+        
+        println "Quality check completed: ${status}"
+    }
+}
+
+// 4. check 태스크에 연결
+check.dependsOn runQualityAnalysis

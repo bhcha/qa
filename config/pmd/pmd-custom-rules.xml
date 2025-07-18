@@ -1,0 +1,133 @@
+<?xml version="1.0"?>
+<ruleset name="IdentityBridge PMD Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Custom PMD rules for IdentityBridge project
+        헥사고날 아키텍처와 도메인 주도 설계를 고려한 규칙들
+    </description>
+
+    <!-- Security 관련 규칙들 강화 -->
+    <rule ref="category/java/security.xml">
+        <exclude name="AvoidUsingHardCodedIP"/>
+    </rule>
+    
+    <!-- Best Practices -->
+    <rule ref="category/java/bestpractices.xml">
+        <exclude name="JUnitTestsShouldIncludeAssert"/> <!-- REST Docs 테스트 때문에 제외 -->
+        <exclude name="GuardLogStatement"/> <!-- SLF4J 로깅 성능 이슈 무시 -->
+    </rule>
+    
+    <!-- Code Style -->
+    <rule ref="category/java/codestyle.xml">
+        <exclude name="OnlyOneReturn"/> <!-- 가독성을 위해 허용 -->
+        <exclude name="AtLeastOneConstructor"/> <!-- Spring 컴포넌트에서 불필요 -->
+        <exclude name="CallSuperInConstructor"/> <!-- 불필요한 super() 호출 -->
+        <exclude name="CommentDefaultAccessModifier"/> <!-- package-private 접근자 허용 -->
+        <exclude name="DefaultPackage"/> <!-- 헥사고날 아키텍처에서 패키지 접근 허용 -->
+    </rule>
+    
+    <!-- 변수명 길이 규칙 완화 -->
+    <rule ref="category/java/codestyle.xml/LongVariable">
+        <properties>
+            <property name="minimum" value="25"/> <!-- 기본 17에서 25로 완화 -->
+        </properties>
+    </rule>
+    
+    <rule ref="category/java/codestyle.xml/ShortVariable">
+        <properties>
+            <property name="minimum" value="2"/> <!-- 기본 3에서 2로 완화 -->
+        </properties>
+    </rule>
+    
+    <!-- 로거 명명 규칙 -->
+    <rule ref="category/java/codestyle.xml/FieldNamingConventions">
+        <properties>
+            <property name="constantPattern" value="[A-Z][A-Z_0-9]*|logger"/>
+        </properties>
+    </rule>
+
+    <!-- Design 규칙 -->
+    <rule ref="category/java/design.xml">
+        <exclude name="LawOfDemeter"/> <!-- 헥사고날 아키텍처에서 체인 호출 허용 -->
+        <exclude name="UseUtilityClass"/> <!-- Spring 컴포넌트에서 불필요 -->
+        <exclude name="AvoidCatchingGenericException"/> <!-- 도메인 경계에서 예외 변환 허용 -->
+    </rule>
+    
+    <!-- TooManyMethods 완화 -->
+    <rule ref="category/java/design.xml/TooManyMethods">
+        <properties>
+            <property name="maxmethods" value="15"/> <!-- 기본 10에서 15로 완화 -->
+        </properties>
+    </rule>
+    
+    <!-- ExcessiveClassLength 완화 -->
+    <rule ref="category/java/design.xml/ExcessiveClassLength">
+        <properties>
+            <property name="minimum" value="1500"/> <!-- 기본 1000에서 1500으로 완화 -->
+        </properties>
+    </rule>
+
+    <!-- Error Prone -->
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="BeanMembersShouldSerialize"/> <!-- DTO에서 불필요 -->
+        <exclude name="DataflowAnomalyAnalysis"/> <!-- 과도한 false positive -->
+        <exclude name="AvoidLiteralsInIfCondition"/> <!-- 도메인 로직에서 허용 -->
+    </rule>
+
+    <!-- Performance -->
+    <rule ref="category/java/performance.xml">
+        <exclude name="AvoidInstantiatingObjectsInLoops"/> <!-- 특정 케이스에서 허용 -->
+    </rule>
+    
+    <!-- String trim() 성능 규칙 완화 -->
+    <rule ref="category/java/performance.xml/InefficientEmptyStringCheck">
+        <properties>
+            <property name="violationSuppressXPath" value="//MethodDeclaration[@Name='isBlank' or @Name='isEmpty']"/>
+        </properties>
+    </rule>
+
+    <!-- 도메인별 커스텀 규칙 -->
+    
+    <!-- Authentication 도메인 -->
+    <rule name="NoHardcodedCredentials"
+          language="java"
+          message="인증 정보를 하드코딩하지 마세요"
+          class="net.sourceforge.pmd.lang.rule.XPathRule">
+        <description>
+            인증 관련 도메인에서 하드코딩된 자격증명을 방지합니다.
+        </description>
+        <priority>1</priority>
+        <properties>
+            <property name="xpath">
+                <value>
+                    //Literal[@Image[contains(@Image, 'password') or contains(@Image, 'secret') or contains(@Image, 'token')]]
+                    [ancestor::ClassOrInterfaceDeclaration[contains(@SimpleName, 'Auth')]]
+                </value>
+            </property>
+        </properties>
+    </rule>
+    
+    <!-- 어댑터 레이어 규칙 -->
+    <rule name="AdapterShouldNotAccessDomainDirectly"
+          language="java"
+          message="어댑터는 포트를 통해서만 도메인에 접근해야 합니다"
+          class="net.sourceforge.pmd.lang.rule.XPathRule">
+        <description>
+            헥사고날 아키텍처에서 어댑터는 포트 인터페이스를 통해서만 도메인에 접근해야 합니다.
+        </description>
+        <priority>2</priority>
+        <properties>
+            <property name="xpath">
+                <value>
+                    //ImportDeclaration[@ImportedName[starts-with(@Image, 'com.dx.identitybridge.domain')]]
+                    [ancestor::CompilationUnit//ClassOrInterfaceDeclaration[contains(@SimpleName, 'Adapter')]]
+                    [not(contains(@ImportedName, '.port.'))]
+                </value>
+            </property>
+        </properties>
+    </rule>
+
+</ruleset>

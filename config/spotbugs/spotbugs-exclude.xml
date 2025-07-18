@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude generated classes -->
+    <Match>
+        <Class name="~.*\..*Application"/>
+        <Bug pattern="DM_EXIT"/>
+    </Match>
+    
+    <!-- Exclude test classes from certain checks -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="URF_UNREAD_FIELD"/>
+    </Match>
+    
+    <!-- Exclude configuration classes -->
+    <Match>
+        <Class name="~.*Config.*"/>
+        <Bug pattern="UWF_UNWRITTEN_FIELD"/>
+    </Match>
+    
+    <!-- Exclude DTO classes from serialization warnings -->
+    <Match>
+        <Class name="~.*\.(dto|model)\..*"/>
+        <Bug pattern="SE_NO_SERIALVERSIONID"/>
+    </Match>
+    
+    <!-- Exclude Spring Boot auto-configuration -->
+    <Match>
+        <Package name="~.*\.config\..*"/>
+        <Bug pattern="UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD"/>
+    </Match>
+    
+    <!-- Exclude EI_EXPOSE_REP for all getter methods in configuration classes -->
+    <Match>
+        <Package name="~.*\.config\..*"/>
+        <Method name="~get.*"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    
+    <!-- Exclude EI_EXPOSE_REP for Spring Configuration Properties -->
+    <Match>
+        <Class name="~.*SecurityProperties.*"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    
+    <Match>
+        <Class name="~.*SecurityProperties.*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <!-- Exclude EI_EXPOSE_REP2 for dependency injection patterns -->
+    <Match>
+        <Class name="~.*"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <!-- Exclude EI_EXPOSE_REP2 for setter methods in Spring components -->
+    <Match>
+        <Class name="~.*"/>
+        <Method name="~set.*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <!-- Exclude EI_EXPOSE_REP2 for health indicators and configuration validators -->
+    <Match>
+        <Package name="~.*\.config\.health\..*"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    
+    <Match>
+        <Package name="~.*\.config\.health\..*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <Match>
+        <Package name="~.*\.config\.validation\..*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <!-- Exclude EI_EXPOSE_REP2 for Spring Web Configuration -->
+    <Match>
+        <Class name="com.dx.identitybridge.config.WebConfig"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>

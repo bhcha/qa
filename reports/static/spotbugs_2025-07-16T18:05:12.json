@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "timestamp": "2025-07-16T18:05:12",
+  "type": "spotbugs",
+  "target": "src/main/java",
+  "summary": "SpotBugs bug pattern analysis completed",
+  "violations": [],
+  "metrics": {
+    "files_analyzed":       77,
+    "bugs_found": 0
+  }
+}

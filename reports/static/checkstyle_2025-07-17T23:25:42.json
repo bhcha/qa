@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "timestamp": "2025-07-17T23:25:42",
+  "type": "checkstyle",
+  "target": "src/main/java",
+  "summary": "Checkstyle code style analysis completed",
+  "violations": [],
+  "metrics": {
+    "files_analyzed":       77,
+    "violations_found": 0
+  }
+}
