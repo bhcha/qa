@@ -3,6 +3,7 @@ package com.ldx.qa.report;
 import com.ldx.qa.model.QualityReport;
 import com.ldx.qa.model.AnalysisResult;
 import com.ldx.qa.model.Violation;
+import com.ldx.qa.util.MarkdownToHtmlConverter;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -65,17 +66,22 @@ public class HtmlReportGenerator {
         // Analysis Results
         html.append("    <h2 class=\"mt-4\">Analysis Results</h2>\n");
         for (AnalysisResult result : report.getResults()) {
-            html.append("    <div class=\"card mb-3\">\n");
-            html.append("      <div class=\"card-header\">\n");
-            html.append("        <h5>").append(result.getType().toUpperCase()).append("</h5>\n");
-            html.append("      </div>\n");
-            html.append("      <div class=\"card-body\">\n");
-            html.append("        <p>Status: <span class=\"badge ").append(getBadgeClass(result.getStatus())).append("\">")
-                .append(result.getStatus()).append("</span></p>\n");
-            
-            // Convert line breaks to HTML for better display
-            String formattedSummary = result.getSummary().replace("\n", "<br>");
-            html.append("        <div>").append(formattedSummary).append("</div>\n");
+            // Sequential Gemini 분석 결과는 특별한 처리
+            if ("sequential-gemini".equals(result.getType())) {
+                html.append(generateSequentialGeminiSection(result));
+            } else {
+                // 기존 분석 결과 처리
+                html.append("    <div class=\"card mb-3\">\n");
+                html.append("      <div class=\"card-header\">\n");
+                html.append("        <h5>").append(result.getType().toUpperCase()).append("</h5>\n");
+                html.append("      </div>\n");
+                html.append("      <div class=\"card-body\">\n");
+                html.append("        <p>Status: <span class=\"badge ").append(getBadgeClass(result.getStatus())).append("\">")
+                    .append(result.getStatus()).append("</span></p>\n");
+                
+                // Convert line breaks to HTML for better display
+                String formattedSummary = result.getSummary().replace("\n", "<br>");
+                html.append("        <div>").append(formattedSummary).append("</div>\n");
             
             if (result.getViolations() != null && !result.getViolations().isEmpty()) {
                 // 에러와 경고 분류
@@ -100,17 +106,18 @@ public class HtmlReportGenerator {
                 // 경고들은 HTML 리포트 버튼으로 통합됨 (아래에서 처리)
             }
             
-            // Add HTML report link for all static analysis tools
-            if (hasDetailedReport(result.getType())) {
-                html.append("        <p class=\"mt-2\">");
-                html.append("          <a href=\"").append(getOriginalReportPath(result.getType())).append("\" target=\"_blank\" class=\"btn btn-outline-primary btn-sm\">");
-                html.append("            📄 View ").append(result.getType().toUpperCase()).append(" HTML Report");
-                html.append("          </a>");
-                html.append("        </p>\n");
+                // Add HTML report link for all static analysis tools
+                if (hasDetailedReport(result.getType())) {
+                    html.append("        <p class=\"mt-2\">");
+                    html.append("          <a href=\"").append(getOriginalReportPath(result.getType())).append("\" target=\"_blank\" class=\"btn btn-outline-primary btn-sm\">");
+                    html.append("            📄 View ").append(result.getType().toUpperCase()).append(" HTML Report");
+                    html.append("          </a>");
+                    html.append("        </p>\n");
+                }
+                
+                html.append("      </div>\n");
+                html.append("    </div>\n");
             }
-            
-            html.append("      </div>\n");
-            html.append("    </div>\n");
         }        
         html.append("  </div>\n");
         html.append("</body>\n");
@@ -174,5 +181,94 @@ public class HtmlReportGenerator {
             default:
                 return "#";
         }
+    }
+    
+    /**
+     * Sequential Gemini AI 분석 결과를 위한 특별한 HTML 섹션 생성
+     */
+    private String generateSequentialGeminiSection(AnalysisResult result) {
+        StringBuilder html = new StringBuilder();
+        
+        // 메인 카드
+        html.append("    <div class=\"card mb-3\">\n");
+        html.append("      <div class=\"card-header bg-primary text-white\">\n");
+        html.append("        <h5><i class=\"bi bi-robot\"></i> ").append(result.getType().toUpperCase()).append(" - 지침별 순차 AI 분석</h5>\n");
+        html.append("      </div>\n");
+        html.append("      <div class=\"card-body\">\n");
+        html.append("        <p>Status: <span class=\"badge ").append(getBadgeClass(result.getStatus())).append("\">")
+            .append(result.getStatus()).append("</span></p>\n");
+        
+        // 통계 정보
+        if (result.getMetrics() != null) {
+            html.append("        <div class=\"row mb-3\">\n");
+            html.append("          <div class=\"col-md-3\">\n");
+            html.append("            <div class=\"text-center\">\n");
+            html.append("              <h6 class=\"text-muted\">총 지침</h6>\n");
+            html.append("              <h4 class=\"text-primary\">").append(result.getMetrics().get("totalGuides")).append("</h4>\n");
+            html.append("            </div>\n");
+            html.append("          </div>\n");
+            html.append("          <div class=\"col-md-3\">\n");
+            html.append("            <div class=\"text-center\">\n");
+            html.append("              <h6 class=\"text-muted\">성공</h6>\n");
+            html.append("              <h4 class=\"text-success\">").append(result.getMetrics().get("successfulGuides")).append("</h4>\n");
+            html.append("            </div>\n");
+            html.append("          </div>\n");
+            html.append("          <div class=\"col-md-3\">\n");
+            html.append("            <div class=\"text-center\">\n");
+            html.append("              <h6 class=\"text-muted\">실패</h6>\n");
+            html.append("              <h4 class=\"text-danger\">").append(result.getMetrics().get("failedGuides")).append("</h4>\n");
+            html.append("            </div>\n");
+            html.append("          </div>\n");
+            html.append("          <div class=\"col-md-3\">\n");
+            html.append("            <div class=\"text-center\">\n");
+            html.append("              <h6 class=\"text-muted\">총 시간</h6>\n");
+            html.append("              <h4 class=\"text-info\">").append(String.format("%.1f", result.getMetrics().get("totalExecutionTimeSeconds"))).append("초</h4>\n");
+            html.append("            </div>\n");
+            html.append("          </div>\n");
+            html.append("        </div>\n");
+        }
+        
+        // 분석 결과 요약 (접을 수 있는 아코디언 형태)
+        html.append("        <div class=\"accordion\" id=\"geminiAccordion\">\n");
+        html.append("          <div class=\"accordion-item\">\n");
+        html.append("            <h2 class=\"accordion-header\">\n");
+        html.append("              <button class=\"accordion-button\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#geminiDetails\">\n");
+        html.append("                📋 지침별 상세 분석 결과 보기\n");
+        html.append("              </button>\n");
+        html.append("            </h2>\n");
+        html.append("            <div id=\"geminiDetails\" class=\"accordion-collapse collapse show\">\n");
+        html.append("              <div class=\"accordion-body\">\n");
+        
+        // Markdown을 HTML로 변환하여 표시
+        String formattedSummary = MarkdownToHtmlConverter.convertToHtml(result.getSummary());
+        
+        // 아이콘에 Bootstrap 색상 클래스 적용
+        formattedSummary = formattedSummary
+            .replace("🤖", "<span class=\"text-primary\">🤖</span>")
+            .replace("🔒", "<span class=\"text-warning\">🔒</span>")
+            .replace("🧪", "<span class=\"text-info\">🧪</span>")
+            .replace("🎯", "<span class=\"text-success\">🎯</span>")
+            .replace("📊", "<span class=\"text-secondary\">📊</span>")
+            .replace("✅", "<span class=\"text-success\">✅</span>")
+            .replace("❌", "<span class=\"text-danger\">❌</span>")
+            .replace("⚠️", "<span class=\"text-warning\">⚠️</span>")
+            .replace("📁", "<span class=\"text-info\">📁</span>")
+            .replace("📂", "<span class=\"text-info\">📂</span>")
+            .replace("⏱️", "<span class=\"text-muted\">⏱️</span>")
+            .replace("🔍", "<span class=\"text-primary\">🔍</span>")
+            .replace("📋", "<span class=\"text-secondary\">📋</span>")
+            .replace("📈", "<span class=\"text-success\">📈</span>")
+            .replace("📊", "<span class=\"text-info\">📊</span>");
+        
+        html.append("                <div class=\"mt-3\">").append(formattedSummary).append("</div>\n");
+        html.append("              </div>\n");
+        html.append("            </div>\n");
+        html.append("          </div>\n");
+        html.append("        </div>\n");
+        
+        html.append("      </div>\n");
+        html.append("    </div>\n");
+        
+        return html.toString();
     }
 }

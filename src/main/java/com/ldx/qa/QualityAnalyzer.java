@@ -154,15 +154,43 @@ public class QualityAnalyzer {
         
         // AI analyzers
         if (config.isAiAnalysisEnabled()) {
-            GeminiAnalyzer geminiAnalyzer = new GeminiAnalyzer(config);
-            if (geminiAnalyzer.isAvailable() || !config.isSkipUnavailableAnalyzers()) {
-                analyzerList.add(geminiAnalyzer);
+            // 지침별 순차 분석 여부 확인 (향후 설정으로 제어)
+            boolean useSequentialAnalysis = shouldUseSequentialAnalysis(config);
+            
+            if (useSequentialAnalysis) {
+                // 새로운 지침별 순차 분석기 사용
+                SequentialGuideGeminiAnalyzer sequentialAnalyzer = new SequentialGuideGeminiAnalyzer(config);
+                if (sequentialAnalyzer.isAvailable() || !config.isSkipUnavailableAnalyzers()) {
+                    analyzerList.add(sequentialAnalyzer);
+                    logger.info("Sequential Guide Gemini Analyzer enabled");
+                } else {
+                    logger.info("Gemini AI not available, skipping sequential AI analysis");
+                }
             } else {
-                logger.info("Gemini AI not available, skipping AI analysis");
+                // 기존 통합 분석기 사용
+                GeminiAnalyzer geminiAnalyzer = new GeminiAnalyzer(config);
+                if (geminiAnalyzer.isAvailable() || !config.isSkipUnavailableAnalyzers()) {
+                    analyzerList.add(geminiAnalyzer);
+                    logger.info("Traditional Gemini Analyzer enabled");
+                } else {
+                    logger.info("Gemini AI not available, skipping AI analysis");
+                }
             }
         }
         
         return analyzerList;
+    }
+    
+    /**
+     * 지침별 순차 분석기 사용 여부 결정
+     */
+    private boolean shouldUseSequentialAnalysis(QaConfiguration config) {
+        // TODO: 향후 설정 추가 시 config에서 읽어오기
+        // 예: config.isSequentialGeminiAnalysisEnabled()
+        
+        // 현재는 기본적으로 순차 분석기 사용
+        // config/ai 디렉토리가 있으면 순차 분석기 사용
+        return true;
     }
     
     public QualityReport runAnalysis(Path projectDir, Path outputDir) {

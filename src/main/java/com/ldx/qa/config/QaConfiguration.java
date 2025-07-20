@@ -168,7 +168,7 @@ public class QaConfiguration {
     }
     
     public boolean isCheckstyleEnabled() {
-        return checkstyleEnabled;
+        return staticAnalysisEnabled && checkstyleEnabled;
     }
     
     public void setCheckstyleEnabled(boolean checkstyleEnabled) {
@@ -176,7 +176,7 @@ public class QaConfiguration {
     }
     
     public boolean isPmdEnabled() {
-        return pmdEnabled;
+        return staticAnalysisEnabled && pmdEnabled;
     }
     
     public void setPmdEnabled(boolean pmdEnabled) {
@@ -184,7 +184,7 @@ public class QaConfiguration {
     }
     
     public boolean isSpotbugsEnabled() {
-        return spotbugsEnabled;
+        return staticAnalysisEnabled && spotbugsEnabled;
     }
     
     public void setSpotbugsEnabled(boolean spotbugsEnabled) {
@@ -192,7 +192,7 @@ public class QaConfiguration {
     }
     
     public boolean isJacocoEnabled() {
-        return jacocoEnabled;
+        return staticAnalysisEnabled && jacocoEnabled;
     }
     
     public void setJacocoEnabled(boolean jacocoEnabled) {
@@ -200,7 +200,7 @@ public class QaConfiguration {
     }
     
     public boolean isArchunitEnabled() {
-        return archunitEnabled;
+        return staticAnalysisEnabled && archunitEnabled;
     }
     
     public void setArchunitEnabled(boolean archunitEnabled) {
@@ -216,7 +216,7 @@ public class QaConfiguration {
     }
     
     public boolean isGeminiEnabled() {
-        return geminiEnabled;
+        return aiAnalysisEnabled && geminiEnabled;
     }
     
     public void setGeminiEnabled(boolean geminiEnabled) {
@@ -294,7 +294,7 @@ public class QaConfiguration {
     }
 
     public boolean isKingfisherEnabled() {
-        return kingfisherEnabled;
+        return staticAnalysisEnabled && kingfisherEnabled;
     }
 
     public void setKingfisherEnabled(boolean kingfisherEnabled) {
