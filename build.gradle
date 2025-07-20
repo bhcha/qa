@@ -15,9 +15,25 @@ repositories {
 dependencies {
     // 정적 분석 도구
     implementation 'com.puppycrawl.tools:checkstyle:10.12.0'
-    implementation 'net.sourceforge.pmd:pmd-java:6.55.0'
+    implementation('net.sourceforge.pmd:pmd-java:6.55.0') {
+        exclude group: 'net.sf.saxon', module: 'Saxon-HE'
+        exclude group: 'net.sf.saxon'
+    }
+    implementation('net.sourceforge.pmd:pmd-core:6.55.0') {
+        exclude group: 'net.sf.saxon', module: 'Saxon-HE'
+        exclude group: 'net.sf.saxon'
+    }
+    // PMD without XPath (to avoid Saxon completely)
+    implementation('net.sourceforge.pmd:pmd-dist:6.55.0') {
+        exclude group: 'net.sf.saxon', module: 'Saxon-HE'
+        exclude group: 'net.sf.saxon'
+    }
     implementation 'com.github.spotbugs:spotbugs:4.7.3'
     implementation 'com.tngtech.archunit:archunit:1.2.1'
+    
+    // JaCoCo 라이브러리
+    implementation 'org.jacoco:org.jacoco.core:0.8.11'
+    implementation 'org.jacoco:org.jacoco.report:0.8.11'
     
     // XML 파싱
     implementation 'org.dom4j:dom4j:2.1.4'
@@ -29,9 +45,8 @@ dependencies {
     // HTML 리포트 생성
     implementation 'org.freemarker:freemarker:2.3.32'
     
-    // 로깅
-    implementation 'org.slf4j:slf4j-api:2.0.9'
-    implementation 'ch.qos.logback:logback-classic:1.4.11'
+    // 로깅 (제공되는 환경에서 로깅 구현체 사용)
+    compileOnly 'org.slf4j:slf4j-api:2.0.17'
     
     // 유틸리티
     implementation 'org.apache.commons:commons-lang3:3.12.0'
@@ -40,6 +55,26 @@ dependencies {
     // 테스트
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
     testImplementation 'org.mockito:mockito-core:5.3.1'
+}
+
+// PMD Saxon 충돌 완전 제거
+configurations.all {
+    resolutionStrategy {
+        force 'org.ow2.asm:asm:9.2'
+        force 'org.ow2.asm:asm-commons:9.2'
+        force 'org.ow2.asm:asm-tree:9.2'
+        force 'org.ow2.asm:asm-util:9.2'
+    }
+    exclude group: 'net.sf.saxon', module: 'Saxon-HE'
+    exclude group: 'net.sf.saxon'
+}
+
+// PMD 실행 시 JVM 옵션 추가
+tasks.withType(Pmd) {
+    jvmArgs = [
+            '-Dpmd.xpath.version=1.0',
+            '-Dpmd.use.saxon=false'
+    ]
 }
 
 test {
@@ -65,6 +100,13 @@ jar {
 shadowJar {
     archiveClassifier = 'all'
     mergeServiceFiles()
+    
+    // 로깅 관련 의존성 제외 (호출하는 프로젝트에서 제공)
+    exclude 'ch/qos/logback/**'
+    exclude 'org/slf4j/**'
+    
+    // Saxon 중복 제거
+    exclude 'META-INF/services/net.sf.saxon.*'
     
     manifest {
         attributes(

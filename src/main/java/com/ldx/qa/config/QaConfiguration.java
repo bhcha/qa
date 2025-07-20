@@ -21,7 +21,6 @@ public class QaConfiguration {
     private boolean spotbugsEnabled = true;
     private boolean jacocoEnabled = true;
     private boolean archunitEnabled = true;
-    private boolean sonarqubeEnabled = false;
     
     // AI analysis settings
     private boolean aiAnalysisEnabled = true;
@@ -36,14 +35,19 @@ public class QaConfiguration {
     private String pmdRulesetPath = "config/static/pmd/ruleset.xml";
     private String spotbugsExcludePath = "config/static/spotbugs/exclude.xml";
     private String geminiGuidePath = "config/ai/gemini-guide.md";
-    private String archunitBasePackage = "com.ldx.qa";
+    private String archunitBasePackage = "";
     private String archunitConfigPath = "config/archunit/archunit.properties";
     
-    // SonarQube settings
-    private String sonarHostUrl = "http://localhost:9000";
-    private String sonarProjectKey;
-    private String sonarToken;
-    
+    // Track if base package was explicitly configured
+    private boolean basePackageExplicitlyConfigured = false;
+
+    // Kingfisher settings
+    private boolean kingfisherEnabled = true;
+    private String kingfisherConfigPath = "config/kingfisher/rules.yaml";
+    private String kingfisherConfidenceLevel = "medium"; // low, medium, high
+    private boolean kingfisherValidationEnabled = true;
+
+
     public QaConfiguration() {
         // Default constructor
     }
@@ -87,9 +91,18 @@ public class QaConfiguration {
             props.getProperty("qa.static.jacoco.enabled", "true"));
         config.archunitEnabled = Boolean.parseBoolean(
             props.getProperty("qa.static.archunit.enabled", "true"));
-        config.sonarqubeEnabled = Boolean.parseBoolean(
-            props.getProperty("qa.static.sonarqube.enabled", "false"));
-        
+
+        // Kingfisher
+        config.kingfisherEnabled = Boolean.parseBoolean(
+                props.getProperty("qa.static.kingfisher.enabled", "true"));
+        config.kingfisherConfigPath = props.getProperty(
+                "qa.static.kingfisher.configPath", config.kingfisherConfigPath);
+        config.kingfisherConfidenceLevel = props.getProperty(
+                "qa.static.kingfisher.confidenceLevel", config.kingfisherConfidenceLevel);
+        config.kingfisherValidationEnabled = Boolean.parseBoolean(
+                props.getProperty("qa.static.kingfisher.validationEnabled", "true"));
+
+
         // AI analysis
         config.aiAnalysisEnabled = Boolean.parseBoolean(
             props.getProperty("qa.ai.enabled", "true"));
@@ -111,16 +124,13 @@ public class QaConfiguration {
             "qa.static.spotbugs.excludePath", config.spotbugsExcludePath);
         config.geminiGuidePath = props.getProperty(
             "qa.ai.gemini.guidePath", config.geminiGuidePath);
-        config.archunitBasePackage = props.getProperty(
-            "qa.static.archunit.basePackage", config.archunitBasePackage);
+        String configuredBasePackage = props.getProperty("qa.static.archunit.basePackage");
+        if (configuredBasePackage != null) {
+            config.archunitBasePackage = configuredBasePackage;
+            config.basePackageExplicitlyConfigured = true;
+        }
         config.archunitConfigPath = props.getProperty(
             "qa.static.archunit.configPath", config.archunitConfigPath);
-        
-        // SonarQube
-        config.sonarHostUrl = props.getProperty(
-            "qa.static.sonarqube.hostUrl", config.sonarHostUrl);
-        config.sonarProjectKey = props.getProperty("qa.static.sonarqube.projectKey");
-        config.sonarToken = props.getProperty("qa.static.sonarqube.token");
         
         return config;
     }
@@ -195,13 +205,6 @@ public class QaConfiguration {
     
     public void setArchunitEnabled(boolean archunitEnabled) {
         this.archunitEnabled = archunitEnabled;
-    }
-    
-    public boolean isSonarqubeEnabled() {
-        return sonarqubeEnabled;
-    }    
-    public void setSonarqubeEnabled(boolean sonarqubeEnabled) {
-        this.sonarqubeEnabled = sonarqubeEnabled;
     }
     
     public boolean isAiAnalysisEnabled() {
@@ -282,27 +285,44 @@ public class QaConfiguration {
         this.archunitConfigPath = archunitConfigPath;
     }
     
-    public String getSonarHostUrl() {
-        return sonarHostUrl;
+    public boolean isBasePackageExplicitlyConfigured() {
+        return basePackageExplicitlyConfigured;
     }
     
-    public void setSonarHostUrl(String sonarHostUrl) {
-        this.sonarHostUrl = sonarHostUrl;
+    public void setBasePackageExplicitlyConfigured(boolean basePackageExplicitlyConfigured) {
+        this.basePackageExplicitlyConfigured = basePackageExplicitlyConfigured;
     }
-    
-    public String getSonarProjectKey() {
-        return sonarProjectKey;
+
+    public boolean isKingfisherEnabled() {
+        return kingfisherEnabled;
     }
-    
-    public void setSonarProjectKey(String sonarProjectKey) {
-        this.sonarProjectKey = sonarProjectKey;
+
+    public void setKingfisherEnabled(boolean kingfisherEnabled) {
+        this.kingfisherEnabled = kingfisherEnabled;
     }
-    
-    public String getSonarToken() {
-        return sonarToken;
+
+    public String getKingfisherConfigPath() {
+        return kingfisherConfigPath;
     }
-    
-    public void setSonarToken(String sonarToken) {
-        this.sonarToken = sonarToken;
+
+    public void setKingfisherConfigPath(String kingfisherConfigPath) {
+        this.kingfisherConfigPath = kingfisherConfigPath;
     }
+
+    public String getKingfisherConfidenceLevel() {
+        return kingfisherConfidenceLevel;
+    }
+
+    public void setKingfisherConfidenceLevel(String kingfisherConfidenceLevel) {
+        this.kingfisherConfidenceLevel = kingfisherConfidenceLevel;
+    }
+
+    public boolean isKingfisherValidationEnabled() {
+        return kingfisherValidationEnabled;
+    }
+
+    public void setKingfisherValidationEnabled(boolean kingfisherValidationEnabled) {
+        this.kingfisherValidationEnabled = kingfisherValidationEnabled;
+    }
+
 }

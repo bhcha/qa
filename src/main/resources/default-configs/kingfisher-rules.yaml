@@ -1,0 +1,66 @@
+# Kingfisher Custom Rules Configuration
+# This file defines custom secret detection rules for your project
+
+rules:
+  # Example custom rule for internal API keys
+  - id: internal-api-key
+    description: "Internal API Key Pattern"
+    pattern: '(?i)(internal[_-]?api[_-]?key)\s*[:=]\s*["\']?([a-zA-Z0-9]{32,})["\']?'
+    examples:
+      - 'internal_api_key = "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"'
+      - 'INTERNAL-API-KEY: x9y8z7w6v5u4t3s2r1q0p9o8n7m6l5k4'
+    severity: high
+    tags:
+      - internal
+      - api-key
+
+  # Database connection strings
+  - id: jdbc-connection-string
+    description: "JDBC Connection String with credentials"
+    pattern: 'jdbc:[a-z]+://[^:]+:([^@]+)@[^/]+(?:/[^?]+)?'
+    examples:
+      - 'jdbc:mysql://user:password123@localhost:3306/database'
+      - 'jdbc:postgresql://admin:secret@db.example.com/mydb'
+    severity: critical
+    tags:
+      - database
+      - credentials
+
+  # Custom token patterns
+  - id: jwt-token
+    description: "JWT Token"
+    pattern: 'eyJ[A-Za-z0-9-_]+\.eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+'
+    examples:
+      - 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+    severity: high
+    tags:
+      - authentication
+      - jwt
+
+# Exclusions - patterns to ignore
+exclusions:
+  # Test data and mock credentials
+  - pattern: 'test[_-]?key'
+  - pattern: 'mock[_-]?secret'
+  - pattern: 'example[_-]?token'
+  - pattern: 'dummy[_-]?password'
+
+  # Documentation examples
+  - path: '**/docs/**'
+  - path: '**/README.md'
+  - path: '**/CONTRIBUTING.md'
+
+# Validation settings
+validation:
+  # Enable/disable validation for specific rule types
+  aws: true
+  azure: true
+  gcp: true
+  github: true
+  slack: true
+
+  # Timeout for validation requests (in seconds)
+  timeout: 5
+
+  # Max concurrent validation requests
+  max_concurrent: 10

@@ -7,9 +7,11 @@ public class Violation {
     private String severity; // error, warning, info
     private String file;
     private int line;
+    private int column;
     private String message;
     private String rule;
     private String type;
+    private String category;
     
     public Violation() {
     }
@@ -36,6 +38,11 @@ public class Violation {
             return this;
         }
         
+        public Builder column(int column) {
+            violation.column = column;
+            return this;
+        }
+        
         public Builder message(String message) {
             violation.message = message;
             return this;
@@ -48,6 +55,11 @@ public class Violation {
         
         public Builder type(String type) {
             violation.type = type;
+            return this;
+        }
+        
+        public Builder category(String category) {
+            violation.category = category;
             return this;
         }
         
@@ -81,6 +93,14 @@ public class Violation {
         this.line = line;
     }
     
+    public int getColumn() {
+        return column;
+    }
+    
+    public void setColumn(int column) {
+        this.column = column;
+    }
+    
     public String getMessage() {
         return message;
     }
@@ -103,5 +123,13 @@ public class Violation {
     
     public void setType(String type) {
         this.type = type;
+    }
+    
+    public String getCategory() {
+        return category;
+    }
+    
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

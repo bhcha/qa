@@ -34,7 +34,6 @@ qa.static.checkstyle.enabled=true
 qa.static.pmd.enabled=true
 qa.static.spotbugs.enabled=true
 qa.static.jacoco.enabled=true
-qa.static.sonarqube.enabled=false
 
 # AI 분석 도구
 qa.ai.gemini.enabled=true
@@ -73,7 +72,7 @@ qa.reports.json.enabled=true
 ## 🎯 Gradle 태스크
 
 ### qualityCheck
-전체 품질 분석을 실행합니다.
+전체 품질 분석을 실행합니다. (테스트 자동 실행, JaCoCo 포함)
 ```bash
 ./gradlew qualityCheck
 ```
@@ -125,7 +124,7 @@ qa.static.checkstyle.configPath=custom/checkstyle.xml
 
 ### GitHub Actions 예시
 ```yaml
-- name: Quality Check
+- name: Quality Check (테스트 + 품질 분석)
   run: ./gradlew qualityCheck
   
 - name: Upload Quality Report
@@ -139,7 +138,7 @@ qa.static.checkstyle.configPath=custom/checkstyle.xml
 ```groovy
 stage('Quality Check') {
     steps {
-        sh './gradlew qualityCheck'
+        sh './gradlew qualityCheck'  // 테스트 + 품질 분석
     }
     post {
         always {

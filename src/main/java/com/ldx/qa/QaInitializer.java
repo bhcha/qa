@@ -25,7 +25,13 @@ public class QaInitializer {
         CONFIG_FILES.put("config/static/pmd/pmd-custom-rules.xml", "default-configs/pmd-ruleset.xml");
         CONFIG_FILES.put("config/static/spotbugs/spotbugs-exclude.xml", "default-configs/spotbugs-exclude.xml");
         CONFIG_FILES.put("config/archunit/archunit.properties", "default-configs/archunit.properties");
-        
+
+        // Kingfisher 설정 파일 추가
+        CONFIG_FILES.put("config/kingfisher/rules.yaml", "default-configs/kingfisher-rules.yaml");
+        CONFIG_FILES.put("config/kingfisher/baseline.yaml", "default-configs/kingfisher-baseline.yaml");
+
+
+
         // AI 분석 설정 파일들
         CONFIG_FILES.put("config/ai/gemini-guide.md", "default-configs/gemini-guide.md");
         
@@ -35,6 +41,7 @@ public class QaInitializer {
         // 문서 파일들
         CONFIG_FILES.put("docs/qa-guide.md", "default-configs/qa-guide.md");
         CONFIG_FILES.put("docs/quality-standards.md", "default-configs/quality-standards.md");
+        CONFIG_FILES.put("docs/kingfisher-guide.md", "default-configs/kingfisher-guide.md");  // 가이드 추가
     }
     
     /**
@@ -71,8 +78,11 @@ public class QaInitializer {
             }
         }
         
+        // JaCoCo 플러그인 자동 추가
+        boolean jacocoAdded = addJaCoCoPluginToBuildGradle(projectRoot);
+        
         logger.info("QA initialization completed. Copied: {}, Skipped: {}", copiedFiles, skippedFiles);
-        printInitializationSummary(projectRoot, copiedFiles, skippedFiles);
+        printInitializationSummary(projectRoot, copiedFiles, skippedFiles, jacocoAdded);
     }
     
     /**
@@ -128,15 +138,83 @@ public class QaInitializer {
     }
     
     /**
+     * build.gradle 파일에 JaCoCo 플러그인을 자동으로 추가합니다.
+     */
+    private static boolean addJaCoCoPluginToBuildGradle(Path projectRoot) {
+        Path buildGradleFile = projectRoot.resolve("build.gradle");
+        
+        if (!Files.exists(buildGradleFile)) {
+            logger.warn("build.gradle file not found: {}", buildGradleFile);
+            return false;
+        }
+        
+        try {
+            List<String> lines = Files.readAllLines(buildGradleFile, java.nio.charset.StandardCharsets.UTF_8);
+            
+            // JaCoCo 플러그인이 이미 있는지 확인
+            boolean hasJacocoPlugin = lines.stream()
+                .anyMatch(line -> line.contains("id 'jacoco'") || line.contains("id \"jacoco\""));
+            
+            if (hasJacocoPlugin) {
+                logger.info("JaCoCo plugin already exists in build.gradle");
+                return false;
+            }
+            
+            // plugins 블록을 찾아서 JaCoCo 플러그인 추가
+            List<String> modifiedLines = new ArrayList<>();
+            boolean pluginsBlockFound = false;
+            boolean jacocoPluginAdded = false;
+            
+            for (int i = 0; i < lines.size(); i++) {
+                String line = lines.get(i);
+                modifiedLines.add(line);
+                
+                // plugins 블록 시작을 찾음
+                if (!pluginsBlockFound && line.trim().equals("plugins {")) {
+                    pluginsBlockFound = true;
+                    continue;
+                }
+                
+                // plugins 블록 내에서 JaCoCo 플러그인 추가
+                if (pluginsBlockFound && !jacocoPluginAdded && line.trim().equals("}")) {
+                    // plugins 블록 끝에 도달하기 전에 JaCoCo 플러그인 추가
+                    modifiedLines.add(modifiedLines.size() - 1, "    id 'jacoco'");
+                    jacocoPluginAdded = true;
+                    logger.info("Added JaCoCo plugin to build.gradle");
+                }
+            }
+            
+            if (!jacocoPluginAdded) {
+                logger.warn("Could not find suitable location to add JaCoCo plugin in build.gradle");
+                return false;
+            }
+            
+            // 수정된 내용을 파일에 쓰기
+            Files.write(buildGradleFile, modifiedLines, java.nio.charset.StandardCharsets.UTF_8);
+            logger.info("JaCoCo plugin successfully added to build.gradle");
+            return true;
+            
+        } catch (IOException e) {
+            logger.error("Failed to modify build.gradle: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
      * 초기화 결과를 출력합니다.
      */
-    private static void printInitializationSummary(Path projectRoot, int copiedFiles, int skippedFiles) {
+    private static void printInitializationSummary(Path projectRoot, int copiedFiles, int skippedFiles, boolean jacocoAdded) {
         System.out.println("\n" + "=".repeat(60));
         System.out.println("QA Module Initialization Summary");
         System.out.println("=".repeat(60));
         System.out.println("Project: " + projectRoot.toAbsolutePath());
         System.out.println("Files copied: " + copiedFiles);
         System.out.println("Files skipped: " + skippedFiles);
+        if (jacocoAdded) {
+            System.out.println("JaCoCo plugin: Added to build.gradle");
+        } else {
+            System.out.println("JaCoCo plugin: Already exists or could not be added");
+        }
         System.out.println("\nConfiguration structure created:");
         System.out.println("├── config/");
         System.out.println("│   ├── static/");
@@ -145,16 +223,24 @@ public class QaInitializer {
         System.out.println("│   │   └── spotbugs/spotbugs-exclude.xml");
         System.out.println("│   ├── archunit/");
         System.out.println("│   │   └── archunit.properties");
+        System.out.println("│   ├── kingfisher/");  // Kingfisher 추가
+        System.out.println("│   │   ├── rules.yaml");
+        System.out.println("│   │   └── baseline.yaml");
         System.out.println("│   └── ai/");
         System.out.println("│       └── gemini-guide.md");
         System.out.println("│   └── qa.properties");
         System.out.println("└── docs/");
         System.out.println("    ├── qa-guide.md");
-        System.out.println("    └── quality-standards.md");
+        System.out.println("    ├── quality-standards.md");
+        System.out.println("    └── kingfisher-guide.md");
         System.out.println("\nNext steps:");
-        System.out.println("1. Review and customize configuration files");
-        System.out.println("2. Run: ./gradlew qualityCheck");
-        System.out.println("3. Check reports in: build/reports/quality/");
+        if (jacocoAdded) {
+            System.out.println("1. Run tests to generate JaCoCo coverage data: ./gradlew test");
+        }
+        System.out.println("2. Install Kingfisher binary (if using secret scanning)");
+        System.out.println("3. Review and customize configuration files");
+        System.out.println("4. Run: ./gradlew qualityCheck");
+        System.out.println("5. Check reports in: build/reports/quality/");
         System.out.println("=".repeat(60));
     }
     

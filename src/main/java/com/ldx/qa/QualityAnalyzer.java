@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -31,11 +32,88 @@ public class QualityAnalyzer {
     }
     
     /**
-     * Static method for easy integration with Gradle tasks
+     * Static method for easy integration with Gradle tasks (with automatic config detection)
+     */
+    public static QualityReport analyze(File projectDir, File outputDir) {
+        QaConfiguration config = loadConfiguration(projectDir.toPath());
+        return analyze(projectDir, outputDir, config);
+    }
+    
+    /**
+     * Static method for easy integration with Gradle tasks (with explicit config)
      */
     public static QualityReport analyze(File projectDir, File outputDir, QaConfiguration config) {
+        // Auto-detect base package only if not explicitly configured
+        if (shouldAutoDetectBasePackage(config, projectDir)) {
+            String detectedPackage = autoDetectBasePackage(projectDir.toPath());
+            if (detectedPackage != null) {
+                config.setArchunitBasePackage(detectedPackage);
+                logger.info("Auto-detected base package: {}", detectedPackage);
+            } else {
+                logger.warn("Could not auto-detect base package, using default: {}", config.getArchunitBasePackage());
+            }
+        } else {
+            logger.info("Using configured base package: {}", config.getArchunitBasePackage());
+        }
+        
         QualityAnalyzer analyzer = new QualityAnalyzer(config);
         return analyzer.runAnalysis(projectDir.toPath(), outputDir.toPath());
+    }
+    
+    /**
+     * Automatically load configuration from project or parent directories
+     */
+    private static QaConfiguration loadConfiguration(Path projectDir) {
+        // 1. 프로젝트 설정 확인
+        Path projectConfig = projectDir.resolve("config/qa.properties");
+        if (Files.exists(projectConfig)) {
+            logger.info("Loading configuration from project: {}", projectConfig);
+            return QaConfiguration.fromFile(projectConfig.toFile());
+        }
+        
+        // 2. 의존성 프로젝트에서 설정 찾기
+        Path parentConfig = findParentProjectConfig(projectDir);
+        if (parentConfig != null) {
+            logger.info("Loading configuration from parent project: {}", parentConfig);
+            return QaConfiguration.fromFile(parentConfig.toFile());
+        }
+        
+        // 3. 기본 설정 사용
+        logger.info("Using default configuration");
+        return QaConfiguration.defaultConfig();
+    }
+    
+    /**
+     * Find configuration file in parent project directories
+     */
+    private static Path findParentProjectConfig(Path projectDir) {
+        Path current = projectDir.getParent();
+        
+        while (current != null && !current.equals(current.getParent())) {
+            // Check for qa.properties in config directory
+            Path configFile = current.resolve("config/qa.properties");
+            if (Files.exists(configFile)) {
+                return configFile;
+            }
+            
+            // Check if this directory looks like a project root
+            // (has build.gradle, pom.xml, or .git)
+            boolean isProjectRoot = Files.exists(current.resolve("build.gradle")) ||
+                                   Files.exists(current.resolve("pom.xml")) ||
+                                   Files.exists(current.resolve(".git"));
+            
+            if (isProjectRoot) {
+                // Look for qa.properties in this project root
+                Path rootConfig = current.resolve("qa.properties");
+                if (Files.exists(rootConfig)) {
+                    return rootConfig;
+                }
+            }
+            
+            current = current.getParent();
+        }
+        
+        return null;
     }
     
     private List<Analyzer> initializeAnalyzers() {
@@ -58,8 +136,19 @@ public class QualityAnalyzer {
             if (config.isArchunitEnabled()) {
                 analyzerList.add(new ArchUnitAnalyzer(config));
             }
-            if (config.isSonarqubeEnabled()) {
-                analyzerList.add(new SonarQubeAnalyzer(config));
+            // Kingfisher 추가
+            if (config.isKingfisherEnabled()) {
+                KingfisherAnalyzer kingfisherAnalyzer = new KingfisherAnalyzer(config);
+                if (kingfisherAnalyzer.isAvailable()) {
+                    analyzerList.add(kingfisherAnalyzer);
+                    logger.info("Kingfisher secret scanner enabled");
+                } else {
+                    if (!config.isSkipUnavailableAnalyzers()) {
+                        logger.warn("Kingfisher is enabled but not available. Install Kingfisher binary to use secret scanning.");
+                    } else {
+                        logger.info("Kingfisher not available, skipping secret scanning");
+                    }
+                }
             }
         }
         
@@ -170,7 +259,20 @@ public class QualityAnalyzer {
         if (args.length >= 3) {
             config = QaConfiguration.fromFile(new File(args[2]));
         } else {
-            config = QaConfiguration.defaultConfig();
+            config = loadConfiguration(projectDir.toPath());
+        }
+        
+        // Auto-detect base package only if not explicitly configured
+        if (shouldAutoDetectBasePackage(config, projectDir)) {
+            String detectedPackage = autoDetectBasePackage(projectDir.toPath());
+            if (detectedPackage != null) {
+                config.setArchunitBasePackage(detectedPackage);
+                logger.info("Auto-detected base package: {}", detectedPackage);
+            } else {
+                logger.warn("Could not auto-detect base package, using default: {}", config.getArchunitBasePackage());
+            }
+        } else {
+            logger.info("Using configured base package: {}", config.getArchunitBasePackage());
         }
         
         // Run analysis
@@ -178,5 +280,117 @@ public class QualityAnalyzer {
         
         // Exit with appropriate code
         System.exit("pass".equals(report.getOverallStatus()) ? 0 : 1);
+    }
+    
+    private static String autoDetectBasePackage(Path projectPath) {
+        try {
+            // 1. Try to read from build.gradle
+            Path buildGradle = projectPath.resolve("build.gradle");
+            if (Files.exists(buildGradle)) {
+                String content = Files.readString(buildGradle);
+                if (content.contains("group = '")) {
+                    int start = content.indexOf("group = '") + 9;
+                    int end = content.indexOf("'", start);
+                    if (end > start) {
+                        return content.substring(start, end);
+                    }
+                }
+            }
+            
+            // 2. Try to read from pom.xml
+            Path pomXml = projectPath.resolve("pom.xml");
+            if (Files.exists(pomXml)) {
+                String content = Files.readString(pomXml);
+                if (content.contains("<groupId>")) {
+                    int start = content.indexOf("<groupId>") + 9;
+                    int end = content.indexOf("</groupId>", start);
+                    if (end > start) {
+                        return content.substring(start, end);
+                    }
+                }
+            }
+            
+            // 3. Try to find main class
+            Path srcMainJava = projectPath.resolve("src/main/java");
+            if (Files.exists(srcMainJava)) {
+                try (var stream = Files.walk(srcMainJava)) {
+                    return stream
+                        .filter(path -> path.toString().endsWith(".java"))
+                        .filter(path -> {
+                            try {
+                                String content = Files.readString(path);
+                                return content.contains("@SpringBootApplication") || 
+                                       content.contains("public static void main");
+                            } catch (Exception e) {
+                                return false;
+                            }
+                        })
+                        .findFirst()
+                        .map(mainClassPath -> {
+                            try {
+                                String content = Files.readString(mainClassPath);
+                                if (content.contains("package ")) {
+                                    int start = content.indexOf("package ") + 8;
+                                    int end = content.indexOf(";", start);
+                                    if (end > start) {
+                                        return content.substring(start, end).trim();
+                                    }
+                                }
+                            } catch (Exception e) {
+                                // ignore
+                            }
+                            return null;
+                        })
+                        .orElse(null);
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.debug("Failed to auto-detect base package: {}", e.getMessage());
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Determines if base package should be auto-detected
+     */
+    private static boolean shouldAutoDetectBasePackage(QaConfiguration config, File projectDir) {
+        // Don't auto-detect if explicitly configured in properties file
+        if (config.isBasePackageExplicitlyConfigured()) {
+            logger.debug("Base package explicitly configured: {}", config.getArchunitBasePackage());
+            return false;
+        }
+        
+        String configuredPackage = config.getArchunitBasePackage();
+        
+        // Auto-detect if using default package name
+        if ("com.ldx.qa".equals(configuredPackage)) {
+            logger.debug("Using default base package, will auto-detect");
+            return true;
+        }
+        
+        // Auto-detect if configured package doesn't seem to match the project
+        if (configuredPackage != null && !configuredPackage.isEmpty()) {
+            try {
+                // Check if the configured package exists in the project
+                Path srcMainJava = projectDir.toPath().resolve("src/main/java");
+                if (Files.exists(srcMainJava)) {
+                    String packagePath = configuredPackage.replace('.', '/');
+                    Path packageDir = srcMainJava.resolve(packagePath);
+                    
+                    // If package directory doesn't exist, auto-detect
+                    if (!Files.exists(packageDir)) {
+                        logger.info("Configured package {} not found in project structure, will auto-detect", configuredPackage);
+                        return true;
+                    }
+                }
+            } catch (Exception e) {
+                logger.debug("Error checking configured package: {}", e.getMessage());
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

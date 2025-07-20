@@ -1,0 +1,26 @@
+# Kingfisher Baseline File
+# This file contains known findings that should be ignored in future scans
+# Generated automatically by running: kingfisher scan --manage-baseline
+
+# Format:
+# - finding_id: <unique identifier>
+#   file: <file path>
+#   line: <line number>
+#   rule: <rule that matched>
+#   justification: <why this is acceptable>
+
+findings: []
+
+# Example entries:
+# findings:
+#   - finding_id: "abc123"
+#     file: "src/test/resources/test-config.properties"
+#     line: 42
+#     rule: "generic-api-key"
+#     justification: "Test configuration with dummy values"
+#
+#   - finding_id: "def456"
+#     file: "docs/examples/connection.java"
+#     line: 15
+#     rule: "jdbc-connection-string"
+#     justification: "Documentation example with placeholder values"

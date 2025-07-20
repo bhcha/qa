@@ -153,7 +153,7 @@ public class HtmlReportGenerator {
                "pmd".equalsIgnoreCase(type) || 
                "spotbugs".equalsIgnoreCase(type) || 
                "jacoco".equalsIgnoreCase(type) ||
-               "archunit".equalsIgnoreCase(type);
+               "kingfisher".equalsIgnoreCase(type);
     }
     
     private String getOriginalReportPath(String type) {
@@ -168,9 +168,9 @@ public class HtmlReportGenerator {
             case "spotbugs":
                 return "file://" + reportsDir + "/spotbugs/main.html";
             case "jacoco":
-                return "file://" + reportsDir + "/jacoco/test/html/index.html";
-            case "archunit":
-                return "file://" + reportsDir + "/tests/archunitTest/index.html";
+                return "file://" + reportsDir + "/jacoco/test/index.html";
+            case "kingfisher":
+                return "file://" + reportsDir + "/kingfisher/main.html";
             default:
                 return "#";
         }
