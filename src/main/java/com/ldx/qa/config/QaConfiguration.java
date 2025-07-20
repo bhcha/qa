@@ -25,6 +25,7 @@ public class QaConfiguration {
     // AI analysis settings
     private boolean aiAnalysisEnabled = true;
     private boolean geminiEnabled = true;
+    private String geminiModel = "gemini-2.0-flash-thinking-exp"; // Default model
     
     // Report settings
     private boolean htmlReportEnabled = true;
@@ -108,6 +109,8 @@ public class QaConfiguration {
             props.getProperty("qa.ai.enabled", "true"));
         config.geminiEnabled = Boolean.parseBoolean(
             props.getProperty("qa.ai.gemini.enabled", "true"));
+        config.geminiModel = props.getProperty(
+            "qa.ai.gemini.model", config.geminiModel);
         
         // Reports
         config.htmlReportEnabled = Boolean.parseBoolean(
@@ -221,6 +224,14 @@ public class QaConfiguration {
     
     public void setGeminiEnabled(boolean geminiEnabled) {
         this.geminiEnabled = geminiEnabled;
+    }
+    
+    public String getGeminiModel() {
+        return geminiModel;
+    }
+    
+    public void setGeminiModel(String geminiModel) {
+        this.geminiModel = geminiModel;
     }
     
     public boolean isHtmlReportEnabled() {

@@ -162,7 +162,7 @@ public class SequentialGuideGeminiAnalyzer implements Analyzer {
      * Gemini 명령 실행 (완전 동기 대기)
      */
     private String executeGeminiCommand(Path projectPath, String prompt) throws Exception {
-        List<String> command = Arrays.asList("gemini", "-m", "gemini-2.5-flash", "-p", prompt);
+        List<String> command = Arrays.asList("gemini", "-m", config.getGeminiModel(), "-p", prompt);
         
         logger.debug("Gemini 명령 실행 - 프롬프트 길이: {} characters", prompt.length());
         

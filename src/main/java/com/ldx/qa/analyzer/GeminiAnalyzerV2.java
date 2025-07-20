@@ -162,7 +162,7 @@ public class GeminiAnalyzerV2 implements Analyzer {
      * Gemini 명령 실행
      */
     private String executeGeminiCommand(Path projectPath, String prompt) throws Exception {
-        List<String> command = Arrays.asList("gemini", "-m", "gemini-2.5-flash", "-p", prompt);
+        List<String> command = Arrays.asList("gemini", "-m", config.getGeminiModel(), "-p", prompt);
         
         logger.debug("Gemini 명령 실행: {}", String.join(" ", command).substring(0, 
             Math.min(100, String.join(" ", command).length())) + "...");

@@ -147,7 +147,7 @@ public class GeminiMultiStageAnalyzer {
      * Gemini 명령 실행
      */
     private String executeGeminiCommand(Path projectPath, String prompt) throws Exception {
-        List<String> command = Arrays.asList("gemini", "-m", "gemini-2.5-flash", "-p", prompt);
+        List<String> command = Arrays.asList("gemini", "-m", config.getGeminiModel(), "-p", prompt);
         
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(projectPath.toFile());
