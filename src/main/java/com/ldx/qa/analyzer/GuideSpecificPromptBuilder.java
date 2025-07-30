@@ -183,17 +183,18 @@ public class GuideSpecificPromptBuilder {
     }
     
     /**
-     * 프롬프트 길이 최적화
+     * 프롬프트 길이 최적화 (제한 완화)
      */
     private String optimizePromptLength(String prompt, int maxLength) {
-        if (prompt.length() <= maxLength) {
+        // 매우 긴 프롬프트만 제한 (20,000자 이상)
+        if (prompt.length() <= 20000) {
             return prompt;
         }
         
-        logger.warn("프롬프트가 최대 길이({})를 초과하여 축약합니다: {} -> {}", 
-                   maxLength, prompt.length(), maxLength);
+        logger.warn("프롬프트가 매우 길어 축약합니다: {} -> {}", 
+                   prompt.length(), 19500);
         
-        // 중요한 섹션은 유지하고 덜 중요한 부분 축약
-        return prompt.substring(0, maxLength - 100) + "\n\n[내용이 길어 일부 생략됨]";
+        // 매우 큰 프롬프트만 축약
+        return prompt.substring(0, 19500) + "\n\n[내용이 매우 길어 일부 생략됨]";
     }
 }

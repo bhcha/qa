@@ -199,9 +199,10 @@ public class JaCoCoAnalyzer implements com.ldx.qa.analyzer.Analyzer {
                                                    double lineCoverage) {
         List<Violation> violations = new ArrayList<>();
         
-        // Check minimum coverage requirements (hardcoded for now)
-        double minInstructionCoverage = 80.0;
-        double minBranchCoverage = 70.0;
+        // Check minimum coverage requirements from configuration
+        double minInstructionCoverage = config.getJacocoInstructionThreshold();
+        double minBranchCoverage = config.getJaccocoBranchThreshold();
+        double minLineCoverage = config.getJacocoLineThreshold();
         
         if (instructionCoverage < minInstructionCoverage) {
             violations.add(Violation.builder()
@@ -220,6 +221,16 @@ public class JaCoCoAnalyzer implements com.ldx.qa.analyzer.Analyzer {
                 .line(0)
                 .message(String.format("Branch coverage %.1f%% is below minimum %.1f%%", 
                                      branchCoverage, minBranchCoverage))
+                .build());
+        }
+        
+        if (lineCoverage < minLineCoverage) {
+            violations.add(Violation.builder()
+                .severity("warning")
+                .file("Overall Coverage")
+                .line(0)
+                .message(String.format("Line coverage %.1f%% is below minimum %.1f%%", 
+                                     lineCoverage, minLineCoverage))
                 .build());
         }
         

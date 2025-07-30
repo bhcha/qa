@@ -8,7 +8,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -66,20 +70,15 @@ public class GeminiResponseParser {
     }
     
     /**
-     * 단순 텍스트 요약 생성 (점수 없음)
+     * 단순 텍스트 요약 생성 (길이 제한 없음)
      */
     private String buildSimpleTextSummary(String originalOutput) {
         StringBuilder summary = new StringBuilder();
         
         summary.append("🤖 Gemini AI 분석 피드백\n\n");
         
-        // 원본 응답이 너무 길면 적절히 자르기
-        if (originalOutput.length() > 3000) {
-            summary.append(originalOutput.substring(0, 2500));
-            summary.append("\n\n[피드백이 길어 일부 생략됨]");
-        } else {
-            summary.append(originalOutput);
-        }
+        // 전체 응답을 그대로 포함 (제한 제거)
+        summary.append(originalOutput);
         
         return summary.toString();
     }

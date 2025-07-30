@@ -6,13 +6,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.Writer;
-import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * PMD analyzer implementation
@@ -53,12 +53,12 @@ public class PmdAnalyzer implements Analyzer {
             // Run PMD using command line to generate both XML and HTML
             runPmdCommand(projectPath, reportsDir);
 
-            // Count violations from XML (keep simple)
+            // Count violations by priority from XML
             Path xmlReportPath = reportsDir.resolve("main.xml");
-            int violationCount = countViolationsFromXml(xmlReportPath);
+            Map<Integer, Integer> priorityCounts = countViolationsByPriority(xmlReportPath);
 
             // Build result
-            return buildSimpleResult(violationCount);
+            return buildPriorityBasedResult(priorityCounts);
 
         } catch (Exception e) {
             throw new AnalysisException("PMD analysis failed", e);
@@ -74,8 +74,10 @@ public class PmdAnalyzer implements Analyzer {
             reportsDir.resolve("main.xml"), "xml");
         executeCommand(xmlCommand, projectPath);
 
-        // Generate HTML report from XML
-        generateHtmlReport(reportsDir.resolve("main.xml"), reportsDir.resolve("main.html"));
+        // Generate HTML report using PMD native HTML format
+        List<String> htmlCommand = buildPmdCommand(rulesetPath, sourceDir,
+            reportsDir.resolve("main.html"), "html");
+        executeCommand(htmlCommand, projectPath);
 
         logger.info("PMD reports generated successfully");
     }
@@ -159,127 +161,9 @@ public class PmdAnalyzer implements Analyzer {
         }
     }
 
-    private void generateHtmlReport(Path xmlPath, Path htmlPath) {
-        try (Writer writer = new FileWriter(htmlPath.toFile())) {
-            writer.write("<!DOCTYPE html>\n<html>\n<head>\n");
-            writer.write("<title>PMD Report</title>\n");
-            writer.write("<meta charset=\"UTF-8\">\n");
-            writer.write("<style>\n");
-            writer.write("body { font-family: Arial, sans-serif; margin: 20px; }\n");
-            writer.write(".violation { background-color: #fff3cd; padding: 10px; margin: 5px 0; border-left: 4px solid #ffc107; }\n");
-            writer.write(".file-header { background-color: #f0f0f0; padding: 10px; margin: 10px 0; font-weight: bold; }\n");
-            writer.write(".rule-info { color: #666; font-size: 0.9em; }\n");
-            writer.write(".priority-1 { border-left-color: #dc3545; }\n");
-            writer.write(".priority-2 { border-left-color: #fd7e14; }\n");
-            writer.write(".priority-3 { border-left-color: #ffc107; }\n");
-            writer.write(".priority-4 { border-left-color: #20c997; }\n");
-            writer.write(".priority-5 { border-left-color: #6f42c1; }\n");
-            writer.write("</style>\n");
-            writer.write("</head>\n<body>\n");
-            writer.write("<h1>PMD Report</h1>\n");
-
-            int violationCount = countViolationsFromXml(xmlPath);
-            if (violationCount == 0) {
-                writer.write("<p>No violations found.</p>\n");
-            } else {
-                writer.write("<p>Found " + violationCount + " violations</p>\n");
-                parseAndWriteViolations(xmlPath, writer);
-            }
-
-            writer.write("</body>\n</html>");
-        } catch (Exception e) {
-            logger.warn("Failed to generate HTML report: {}", e.getMessage());
-        }
-    }
-    
-    private void parseAndWriteViolations(Path xmlPath, Writer writer) throws IOException {
-        if (!xmlPath.toFile().exists()) {
-            return;
-        }
-        
-        String content = Files.readString(xmlPath);
-        String currentFile = null;
-        
-        // Simple XML parsing using string operations
-        String[] lines = content.split("\n");
-        
-        for (String line : lines) {
-            line = line.trim();
-            
-            if (line.startsWith("<file name=\"")) {
-                // Extract file name
-                int start = line.indexOf("name=\"") + 6;
-                int end = line.indexOf("\"", start);
-                if (end > start) {
-                    String filePath = line.substring(start, end);
-                    String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
-                    if (!fileName.equals(currentFile)) {
-                        currentFile = fileName;
-                        writer.write("<div class=\"file-header\">" + fileName + "</div>\n");
-                    }
-                }
-            } else if (line.startsWith("<violation")) {
-                // Parse violation
-                parseViolation(line, writer);
-            }
-        }
-    }
-    
-    private void parseViolation(String violationLine, Writer writer) throws IOException {
-        // Extract attributes
-        String rule = extractAttribute(violationLine, "rule");
-        String ruleset = extractAttribute(violationLine, "ruleset");
-        String priority = extractAttribute(violationLine, "priority");
-        String beginline = extractAttribute(violationLine, "beginline");
-        String endline = extractAttribute(violationLine, "endline");
-        String method = extractAttribute(violationLine, "method");
-        String variable = extractAttribute(violationLine, "variable");
-        String externalInfoUrl = extractAttribute(violationLine, "externalInfoUrl");
-        
-        // Extract violation message (between > and </violation>)
-        int messageStart = violationLine.indexOf(">") + 1;
-        int messageEnd = violationLine.indexOf("</violation>");
-        String message = "";
-        if (messageEnd > messageStart) {
-            message = violationLine.substring(messageStart, messageEnd).trim();
-        }
-        
-        // Write violation HTML
-        writer.write("<div class=\"violation priority-" + priority + "\">\n");
-        writer.write("<strong>" + rule + "</strong> (" + ruleset + ")\n");
-        writer.write("<br>Line " + beginline);
-        if (!beginline.equals(endline)) {
-            writer.write("-" + endline);
-        }
-        if (method != null && !method.isEmpty()) {
-            writer.write(" in method '" + method + "'");
-        }
-        if (variable != null && !variable.isEmpty()) {
-            writer.write(" variable '" + variable + "'");
-        }
-        writer.write("<br>" + message + "\n");
-        writer.write("<div class=\"rule-info\">Priority: " + priority);
-        if (externalInfoUrl != null && !externalInfoUrl.isEmpty()) {
-            writer.write(" | <a href=\"" + externalInfoUrl + "\" target=\"_blank\">Rule Documentation</a>");
-        }
-        writer.write("</div>\n");
-        writer.write("</div>\n");
-    }
-    
-    private String extractAttribute(String line, String attributeName) {
-        String pattern = attributeName + "=\"";
-        int start = line.indexOf(pattern);
-        if (start == -1) return null;
-        
-        start += pattern.length();
-        int end = line.indexOf("\"", start);
-        if (end == -1) return null;
-        
-        return line.substring(start, end);
-    }
 
     private AnalysisResult buildSimpleResult(int violationCount) {
-        String status = violationCount > 0 ? "pass" : "pass"; // Always pass for now
+        String status = violationCount > config.getPmdFailureThreshold() ? "fail" : "pass";
 
         Map<String, Object> metrics = new HashMap<>();
         metrics.put("violationsFound", violationCount);
@@ -292,6 +176,109 @@ public class PmdAnalyzer implements Analyzer {
             .metrics(metrics)
             .timestamp(LocalDateTime.now())
             .build();
+    }
+    
+    private AnalysisResult buildPriorityBasedResult(Map<Integer, Integer> priorityCounts) {
+        // Calculate total violations
+        int totalViolations = priorityCounts.values().stream().mapToInt(Integer::intValue).sum();
+        
+        // Check each priority threshold
+        boolean failed = false;
+        StringBuilder failureReason = new StringBuilder();
+        
+        int p1Count = priorityCounts.getOrDefault(1, 0);
+        int p2Count = priorityCounts.getOrDefault(2, 0);
+        int p3Count = priorityCounts.getOrDefault(3, 0);
+        int p4Count = priorityCounts.getOrDefault(4, 0);
+        int p5Count = priorityCounts.getOrDefault(5, 0);
+        
+        if (p1Count > config.getPmdPriority1Threshold()) {
+            failed = true;
+            failureReason.append(String.format("Priority 1: %d > %d; ", p1Count, config.getPmdPriority1Threshold()));
+        }
+        if (p2Count > config.getPmdPriority2Threshold()) {
+            failed = true;
+            failureReason.append(String.format("Priority 2: %d > %d; ", p2Count, config.getPmdPriority2Threshold()));
+        }
+        if (p3Count > config.getPmdPriority3Threshold()) {
+            failed = true;
+            failureReason.append(String.format("Priority 3: %d > %d; ", p3Count, config.getPmdPriority3Threshold()));
+        }
+        if (p4Count > config.getPmdPriority4Threshold()) {
+            failed = true;
+            failureReason.append(String.format("Priority 4: %d > %d; ", p4Count, config.getPmdPriority4Threshold()));
+        }
+        if (p5Count > config.getPmdPriority5Threshold()) {
+            failed = true;
+            failureReason.append(String.format("Priority 5: %d > %d; ", p5Count, config.getPmdPriority5Threshold()));
+        }
+        
+        String status = failed ? "fail" : "pass";
+        
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put("violationsFound", totalViolations);
+        metrics.put("priority1Count", p1Count);
+        metrics.put("priority2Count", p2Count);
+        metrics.put("priority3Count", p3Count);
+        metrics.put("priority4Count", p4Count);
+        metrics.put("priority5Count", p5Count);
+        
+        String summary = String.format("PMD found %d violations (P1:%d, P2:%d, P3:%d, P4:%d, P5:%d)",
+                totalViolations, p1Count, p2Count, p3Count, p4Count, p5Count);
+        
+        if (failed) {
+            summary += " - FAILED: " + failureReason.toString();
+        }
+        
+        return AnalysisResult.builder()
+            .type(getName())
+            .status(status)
+            .summary(summary)
+            .violations(new ArrayList<>()) // Empty list - we just show count
+            .metrics(metrics)
+            .timestamp(LocalDateTime.now())
+            .build();
+    }
+    
+    private Map<Integer, Integer> countViolationsByPriority(Path xmlReportPath) {
+        Map<Integer, Integer> priorityCounts = new HashMap<>();
+        
+        if (!xmlReportPath.toFile().exists()) {
+            logger.warn("PMD XML report not found: {}", xmlReportPath);
+            return priorityCounts;
+        }
+        
+        try {
+            String content = Files.readString(xmlReportPath);
+            
+            // Parse violations from XML and count by priority
+            // PMD XML format: <violation beginline="XX" endline="XX" begincolumn="XX" endcolumn="XX" rule="RuleName" ruleset="RuleSet" priority="1" ...>
+            String[] violations = content.split("<violation ");
+            
+            for (int i = 1; i < violations.length; i++) {
+                String violation = violations[i];
+                int priorityStart = violation.indexOf("priority=\"");
+                if (priorityStart != -1) {
+                    priorityStart += 10; // length of 'priority="'
+                    int priorityEnd = violation.indexOf("\"", priorityStart);
+                    if (priorityEnd != -1) {
+                        try {
+                            int priority = Integer.parseInt(violation.substring(priorityStart, priorityEnd));
+                            priorityCounts.put(priority, priorityCounts.getOrDefault(priority, 0) + 1);
+                        } catch (NumberFormatException e) {
+                            logger.warn("Failed to parse priority from PMD violation: {}", violation.substring(0, Math.min(100, violation.length())));
+                        }
+                    }
+                }
+            }
+            
+            logger.info("PMD priority distribution: {}", priorityCounts);
+            
+        } catch (Exception e) {
+            logger.warn("Failed to parse PMD XML report: {}", e.getMessage());
+        }
+        
+        return priorityCounts;
     }
 
 }

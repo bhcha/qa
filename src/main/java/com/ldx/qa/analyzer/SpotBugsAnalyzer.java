@@ -8,7 +8,10 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * SpotBugs analyzer implementation
@@ -49,12 +52,12 @@ public class SpotBugsAnalyzer implements Analyzer {
             // Run SpotBugs using command line to generate both XML and HTML
             runSpotBugsCommand(projectPath, reportsDir);
             
-            // Count violations from XML (keep simple)
+            // Count violations by priority from XML
             Path xmlReportPath = reportsDir.resolve("main.xml");
-            int violationCount = countViolationsFromXml(xmlReportPath);
+            Map<Integer, Integer> priorityCounts = countViolationsByPriority(xmlReportPath);
             
             // Build result
-            return buildSimpleResult(violationCount);
+            return buildPriorityBasedResult(priorityCounts);
                 
         } catch (Exception e) {
             throw new AnalysisException("SpotBugs analysis failed", e);
@@ -77,8 +80,10 @@ public class SpotBugsAnalyzer implements Analyzer {
             reportsDir.resolve("main.xml"), "xml");
         executeCommand(xmlCommand, projectPath);
         
-        // Generate HTML report from XML
-        generateHtmlReport(reportsDir.resolve("main.xml"), reportsDir.resolve("main.html"));
+        // Generate HTML report using SpotBugs native HTML format
+        List<String> htmlCommand = buildSpotBugsCommand(classesDir, excludeFile,
+            reportsDir.resolve("main.html"), "html");
+        executeCommand(htmlCommand, projectPath);
         
         logger.info("SpotBugs reports generated successfully");
     }
@@ -192,62 +197,9 @@ public class SpotBugsAnalyzer implements Analyzer {
         }
     }
     
-    private void generateHtmlReport(Path xmlPath, Path htmlPath) {
-        try {
-            // Simple HTML report generation from XML
-            String xmlContent = java.nio.file.Files.readString(xmlPath);
-            
-            StringBuilder html = new StringBuilder();
-            html.append("<!DOCTYPE html>\n<html>\n<head>\n");
-            html.append("<title>SpotBugs Report</title>\n");
-            html.append("<style>\n");
-            html.append("body { font-family: Arial, sans-serif; margin: 20px; }\n");
-            html.append(".violation { background-color: #f8d7da; padding: 10px; margin: 5px 0; border-left: 4px solid #dc3545; }\n");
-            html.append(".file-header { background-color: #f0f0f0; padding: 10px; margin: 10px 0; font-weight: bold; }\n");
-            html.append("</style>\n");
-            html.append("</head>\n<body>\n");
-            html.append("<h1>SpotBugs Report</h1>\n");
-            
-            // Parse XML and extract violations
-            String[] lines = xmlContent.split("\n");
-            
-            for (String line : lines) {
-                if (line.contains("<BugInstance")) {
-                    String type = extractAttribute(line, "type");
-                    String priority = extractAttribute(line, "priority");
-                    String category = extractAttribute(line, "category");
-                    
-                    html.append("<div class=\"violation\">");
-                    html.append("<strong>").append(type).append("</strong> ");
-                    html.append("[Priority ").append(priority).append(", Category: ").append(category).append("]");
-                    html.append("</div>\n");
-                }
-            }
-            
-            if (!xmlContent.contains("<BugInstance")) {
-                html.append("<p>No bugs found.</p>\n");
-            }
-            
-            html.append("</body>\n</html>");
-            
-            java.nio.file.Files.write(htmlPath, html.toString().getBytes());
-            
-        } catch (Exception e) {
-            logger.warn("Failed to generate HTML report: {}", e.getMessage());
-        }
-    }
-    
-    private String extractAttribute(String line, String attribute) {
-        String pattern = attribute + "=\"";
-        int start = line.indexOf(pattern);
-        if (start == -1) return "";
-        start += pattern.length();
-        int end = line.indexOf("\"", start);
-        return end == -1 ? "" : line.substring(start, end);
-    }
     
     private AnalysisResult buildSimpleResult(int violationCount) {
-        String status = violationCount > 0 ? "pass" : "pass"; // Always pass for now
+        String status = violationCount > config.getSpotbugsFailureThreshold() ? "fail" : "pass";
         
         Map<String, Object> metrics = new HashMap<>();
         metrics.put("violationsFound", violationCount);
@@ -260,5 +212,102 @@ public class SpotBugsAnalyzer implements Analyzer {
             .metrics(metrics)
             .timestamp(LocalDateTime.now())
             .build();
+    }
+    
+    private AnalysisResult buildPriorityBasedResult(Map<Integer, Integer> priorityCounts) {
+        // Calculate total violations
+        int totalViolations = priorityCounts.values().stream().mapToInt(Integer::intValue).sum();
+        
+        // Check each priority threshold
+        boolean failed = false;
+        StringBuilder failureReason = new StringBuilder();
+        
+        int p1Count = priorityCounts.getOrDefault(1, 0);
+        int p2Count = priorityCounts.getOrDefault(2, 0);
+        int p3Count = priorityCounts.getOrDefault(3, 0);
+        int p4Count = priorityCounts.getOrDefault(4, 0);
+        
+        if (p1Count > config.getSpotbugsPriority1Threshold()) {
+            failed = true;
+            failureReason.append(String.format("Priority 1: %d > %d; ", p1Count, config.getSpotbugsPriority1Threshold()));
+        }
+        if (p2Count > config.getSpotbugsPriority2Threshold()) {
+            failed = true;
+            failureReason.append(String.format("Priority 2: %d > %d; ", p2Count, config.getSpotbugsPriority2Threshold()));
+        }
+        if (p3Count > config.getSpotbugsPriority3Threshold()) {
+            failed = true;
+            failureReason.append(String.format("Priority 3: %d > %d; ", p3Count, config.getSpotbugsPriority3Threshold()));
+        }
+        if (p4Count > config.getSpotbugsPriority4Threshold()) {
+            failed = true;
+            failureReason.append(String.format("Priority 4: %d > %d; ", p4Count, config.getSpotbugsPriority4Threshold()));
+        }
+        
+        String status = failed ? "fail" : "pass";
+        
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put("violationsFound", totalViolations);
+        metrics.put("priority1Count", p1Count);
+        metrics.put("priority2Count", p2Count);
+        metrics.put("priority3Count", p3Count);
+        metrics.put("priority4Count", p4Count);
+        
+        String summary = String.format("SpotBugs found %d violations (P1:%d, P2:%d, P3:%d, P4:%d)",
+                totalViolations, p1Count, p2Count, p3Count, p4Count);
+        
+        if (failed) {
+            summary += " - FAILED: " + failureReason.toString();
+        }
+        
+        return AnalysisResult.builder()
+            .type(getName())
+            .status(status)
+            .summary(summary)
+            .violations(new ArrayList<>()) // Empty list - we just show count
+            .metrics(metrics)
+            .timestamp(LocalDateTime.now())
+            .build();
+    }
+    
+    private Map<Integer, Integer> countViolationsByPriority(Path xmlReportPath) {
+        Map<Integer, Integer> priorityCounts = new HashMap<>();
+        
+        if (!xmlReportPath.toFile().exists()) {
+            logger.warn("SpotBugs XML report not found: {}", xmlReportPath);
+            return priorityCounts;
+        }
+        
+        try {
+            String content = java.nio.file.Files.readString(xmlReportPath);
+            
+            // Parse bugs from XML and count by priority
+            // SpotBugs XML format: <BugInstance type="XX" priority="1" rank="XX" ...>
+            String[] bugs = content.split("<BugInstance ");
+            
+            for (int i = 1; i < bugs.length; i++) {
+                String bug = bugs[i];
+                int priorityStart = bug.indexOf("priority=\"");
+                if (priorityStart != -1) {
+                    priorityStart += 10; // length of 'priority="'
+                    int priorityEnd = bug.indexOf("\"", priorityStart);
+                    if (priorityEnd != -1) {
+                        try {
+                            int priority = Integer.parseInt(bug.substring(priorityStart, priorityEnd));
+                            priorityCounts.put(priority, priorityCounts.getOrDefault(priority, 0) + 1);
+                        } catch (NumberFormatException e) {
+                            logger.warn("Failed to parse priority from SpotBugs violation: {}", bug.substring(0, Math.min(100, bug.length())));
+                        }
+                    }
+                }
+            }
+            
+            logger.info("SpotBugs priority distribution: {}", priorityCounts);
+            
+        } catch (Exception e) {
+            logger.warn("Failed to parse SpotBugs XML report: {}", e.getMessage());
+        }
+        
+        return priorityCounts;
     }
 }

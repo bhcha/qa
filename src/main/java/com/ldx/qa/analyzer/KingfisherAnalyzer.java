@@ -574,8 +574,6 @@ public class KingfisherAnalyzer implements Analyzer {
     }
     
     private AnalysisResult buildResult(List<Violation> violations) {
-        String status = violations.isEmpty() ? "pass" : "fail";
-        
         // Count active vs inactive secrets
         long activeSecrets = violations.stream()
             .filter(v -> "error".equals(v.getSeverity()))
@@ -583,6 +581,21 @@ public class KingfisherAnalyzer implements Analyzer {
         long inactiveSecrets = violations.stream()
             .filter(v -> "warning".equals(v.getSeverity()))
             .count();
+        
+        // Check severity-based thresholds
+        boolean failed = false;
+        StringBuilder failureReason = new StringBuilder();
+        
+        if (activeSecrets > config.getKingfisherErrorThreshold()) {
+            failed = true;
+            failureReason.append(String.format("Active secrets: %d > %d; ", activeSecrets, config.getKingfisherErrorThreshold()));
+        }
+        if (inactiveSecrets > config.getKingfisherWarningThreshold()) {
+            failed = true;
+            failureReason.append(String.format("Inactive secrets: %d > %d; ", inactiveSecrets, config.getKingfisherWarningThreshold()));
+        }
+        
+        String status = failed ? "fail" : "pass";
         
         StringBuilder summary = new StringBuilder();
         summary.append("Kingfisher Secret Scan Results:\n");
@@ -593,6 +606,10 @@ public class KingfisherAnalyzer implements Analyzer {
         }
         if (inactiveSecrets > 0) {
             summary.append("Inactive secrets found: ").append(inactiveSecrets).append("\n");
+        }
+        
+        if (failed) {
+            summary.append(" - FAILED: ").append(failureReason.toString()).append("\n");
         }
         
         if (violations.isEmpty()) {

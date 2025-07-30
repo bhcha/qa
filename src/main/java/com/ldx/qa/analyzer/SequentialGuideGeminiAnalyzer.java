@@ -61,7 +61,7 @@ public class SequentialGuideGeminiAnalyzer implements Analyzer {
     
     @Override
     public AnalysisResult analyze(Path projectPath) throws AnalysisException {
-        logger.info("=== 지침별 순차 Gemini AI 분석 시작 ===");
+        logger.debug("=== 지침별 순차 Gemini AI 분석 시작 ===");
         
         if (!isAvailable()) {
             logger.warn("Gemini CLI 사용 불가 - 분석 건너뛰기");
@@ -75,7 +75,7 @@ public class SequentialGuideGeminiAnalyzer implements Analyzer {
             return createNoGuidesResult();
         }
         
-        logger.info("총 {}개 가이드로 순차 분석 시작", guides.size());
+        logger.info("순차 Gemini 분석 시작 - {}개 가이드", guides.size());
         
         // 순차 분석 실행
         List<GuideAnalysisResult> guideResults = analyzeAllGuides(projectPath, guides);
@@ -96,13 +96,13 @@ public class SequentialGuideGeminiAnalyzer implements Analyzer {
             int totalSteps = guides.size();
             
             try {
-                logger.info("[{}/{}] {} 분석 중...", currentStep, totalSteps, guide.getDisplayName());
+                logger.debug("[{}/{}] {} 분석 중...", currentStep, totalSteps, guide.getDisplayName());
                 
                 // 개별 지침 분석 (완전 동기)
                 GuideAnalysisResult result = analyzeWithGuide(projectPath, guide);
                 results.add(result);
                 
-                logger.info("[{}/{}] {} 분석 완료 ✓ ({}초)", 
+                logger.debug("[{}/{}] {} 분석 완료 ✓ ({}초)", 
                            currentStep, totalSteps, guide.getDisplayName(), 
                            String.format("%.2f", result.getExecutionTimeInSeconds()));
                 
@@ -403,19 +403,19 @@ public class SequentialGuideGeminiAnalyzer implements Analyzer {
     private void displayGuideFeedback(GuideAnalysisResult result, int currentStep, int totalSteps) {
         // 구분선 출력
         String separator = String.join("", Collections.nCopies(60, "="));
-        logger.info("\n" + separator);
-        logger.info(result.getFormattedSectionHeader(currentStep, totalSteps));
-        logger.info(separator);
+        logger.debug("\n" + separator);
+        logger.debug(result.getFormattedSectionHeader(currentStep, totalSteps));
+        logger.debug(separator);
         
         // 응답 길이 정보 표시
         String originalSummary = result.getSummary();
-        logger.info("📊 응답 길이: {}자", originalSummary.length());
+        logger.debug("📊 응답 길이: {}자", originalSummary.length());
         if (originalSummary.length() > 3000) {
-            logger.info("⚠️ 응답이 길어 일부 표시가 제한될 수 있습니다");
+            logger.debug("⚠️ 응답이 길어 일부 표시가 제한될 수 있습니다");
         } else if (originalSummary.length() <= 2000) {
-            logger.info("✅ 적절한 길이의 응답");
+            logger.debug("✅ 적절한 길이의 응답");
         }
-        logger.info("");
+        logger.debug("");
         
         // 피드백 내용 출력
         String formattedFeedback = result.getFormattedFeedback();
@@ -423,10 +423,10 @@ public class SequentialGuideGeminiAnalyzer implements Analyzer {
         // 피드백 내용을 그대로 출력 (줄바꿈 처리 제거)
         String[] lines = formattedFeedback.split("\n");
         for (String line : lines) {
-            logger.info(line);
+            logger.debug(line);
         }
         
         // 하단 구분선
-        logger.info(separator + "\n");
+        logger.debug(separator + "\n");
     }
 }

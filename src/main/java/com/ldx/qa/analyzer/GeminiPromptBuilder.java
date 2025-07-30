@@ -55,7 +55,7 @@ public class GeminiPromptBuilder {
         // 프로젝트 컨텍스트 (간단한 정보만)
         if (projectContext != null && !projectContext.trim().isEmpty()) {
             prompt.append("=== 프로젝트 컨텍스트 ===\n");
-            prompt.append(truncateContext(projectContext, 500)); // 컨텍스트 크기 제한
+            prompt.append(projectContext); // 컨텍스트 제한 제거
             prompt.append("\n\n");
         }
         
@@ -226,14 +226,15 @@ public class GeminiPromptBuilder {
     }
     
     /**
-     * 컨텍스트 크기 제한
+     * 컨텍스트 크기 제한 (완화됨)
      */
     private String truncateContext(String context, int maxLength) {
-        if (context.length() <= maxLength) {
+        // 매우 큰 텍스트만 제한 (10,000자 이상)
+        if (context.length() <= 10000) {
             return context;
         }
         
-        return context.substring(0, maxLength) + "\n\n[컨텍스트가 길어 일부 생략됨]";
+        return context.substring(0, 9500) + "\n\n[컨텍스트가 매우 길어 일부 생략됨]";
     }
     
     /**
